@@ -36,12 +36,13 @@ def _get_embedder(model_name: str) -> CachedEmbedder:
 
 # -------------------------- Read artifacts -------------------------------
 
-def load_artifacts(artifacts_dir: os.PathLike, index_prefix: str) -> Tuple[faiss.Index, List[str], List[str], Any]:
+def load_artifacts(artifacts_dir: os.PathLike, index_prefix: str) -> Tuple[faiss.Index, Any, List[str], List[str], Any, Any]:
     """
     Loads:
       - FAISS index: {index_prefix}.faiss
       - chunks:      {index_prefix}_chunks.pkl
       - sources:     {index_prefix}_sources.pkl
+      - parent_map:  {index_prefix}_parent_chunk_map.json
     """
     artifacts_dir = pathlib.Path(artifacts_dir)
     faiss_index = faiss.read_index(str(artifacts_dir / f"{index_prefix}.faiss"))
@@ -49,8 +50,16 @@ def load_artifacts(artifacts_dir: os.PathLike, index_prefix: str) -> Tuple[faiss
     chunks      = pickle.load(open(artifacts_dir / f"{index_prefix}_chunks.pkl", "rb"))
     sources     = pickle.load(open(artifacts_dir / f"{index_prefix}_sources.pkl", "rb"))
     metadata = pickle.load(open(artifacts_dir / f"{index_prefix}_meta.pkl", "rb"))
+    
+    parent_map_file = artifacts_dir / f"{index_prefix}_parent_chunk_map.json"
+    if parent_map_file.exists():
+        import json
+        with open(parent_map_file, "r") as f:
+            parent_map = json.load(f)
+    else:
+        parent_map = {}
 
-    return faiss_index, bm25_index, chunks, sources, metadata
+    return faiss_index, bm25_index, chunks, sources, metadata, parent_map
 
 
 # -------------------------- Helper to get page nums for chunks -------------------------------

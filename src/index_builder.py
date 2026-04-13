@@ -66,6 +66,7 @@ def build_index(
     )
 
     page_to_chunk_ids = {}
+    parent_map = {}
     current_page = 1
     total_chunks = 0
     heading_stack = []
@@ -98,7 +99,10 @@ def build_index(
         page_pattern = re.compile(r'--- Page (\d+) ---')
 
         # Iterate through each chunk produced from this section
-        for sub_chunk_id, sub_chunk in enumerate(sub_chunks):
+        for sub_chunk_id, chunk_dict in enumerate(sub_chunks):
+            sub_chunk = chunk_dict["child"]
+            parent_chunk = chunk_dict["parent"]
+
             # Track all pages this specific chunk touches
             chunk_pages = set()
 
@@ -129,8 +133,10 @@ def build_index(
                 except (IndexError, ValueError):
                     continue
 
-            # Clean sub_chunk by removing page markers
+            # Clean sub_chunk and parent_chunk by removing page markers
             clean_chunk = re.sub(page_pattern, '', sub_chunk).strip()
+            clean_parent = re.sub(page_pattern, '', parent_chunk).strip()
+            parent_map[total_chunks + sub_chunk_id] = clean_parent
             
             # Skip introduction chunks for embedding
             if c["heading"] == "Introduction":
@@ -174,6 +180,11 @@ def build_index(
         json.dump(final_map, f, indent=2)
     print(f"Saved page to chunk ID map: {output_file}")
 
+    parent_map_file = artifacts_dir / f"{index_prefix}_parent_chunk_map.json"
+    with open(parent_map_file, "w") as f:
+        json.dump(parent_map, f, indent=2)
+    print(f"Saved parent chunk ID map: {parent_map_file}")
+
     # Step 2: Create embeddings for FAISS index
     print(f"Embedding {len(all_chunks):,} chunks with {pathlib.Path(embedding_model_path).stem} ...")
     embedder = SentenceTransformer(embedding_model_path)
@@ -196,7 +207,7 @@ def build_index(
         # Standard single-process embedding
         embeddings = embedder.encode(
             all_chunks, 
-            batch_size=8, 
+            batch_size=1, 
             show_progress_bar=True,
             convert_to_numpy=True 
         )

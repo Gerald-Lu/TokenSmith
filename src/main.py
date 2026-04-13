@@ -150,8 +150,15 @@ def get_answer(
         ordered, scores = ranker.rank(raw_scores=raw_scores)
         # print(f"Ordered candidate indices after ranking: {ordered[:cfg.top_k]}")
         # print(f"Corresponding scores: {scores[:cfg.top_k]}")
-        topk_idxs = filter_retrieved_chunks(cfg, chunks, ordered)
-        ranked_chunks = [chunks[i] for i in topk_idxs]
+        topk_idxs = filter_retrieved_chunks(cfg, chunks, ordered)        
+        parent_map = artifacts.get("parent_map", {})
+        ranked_chunks = []
+        seen_texts = set()
+        for i in topk_idxs:
+            text = parent_map.get(str(i)) or parent_map.get(i) or chunks[i]
+            if text not in seen_texts:
+                ranked_chunks.append(text)
+                seen_texts.add(text)
         # print(f"Top-{cfg.top_k} chunk indices after filtering: {topk_idxs}")
         # print("Len Ranked chunks:", len(ranked_chunks))
         # print("Example ranked chunk content:", ranked_chunks[0] if ranked_chunks else "No chunks retrieved")
@@ -174,10 +181,12 @@ def get_answer(
             
             chunks_info = []
             for rank, idx in enumerate(topk_idxs, 1):
+                parent_map = artifacts.get("parent_map", {}) if artifacts else {}
+                chunk_content = parent_map.get(idx) or parent_map.get(str(idx)) or chunks[idx]
                 chunks_info.append({
                     "rank": rank,
                     "chunk_id": idx,
-                    "content": chunks[idx],
+                    "content": chunk_content,
                     "faiss_score": faiss_scores.get(idx, 0),
                     "faiss_rank": faiss_ranks.get(idx, 0),
                     "bm25_score": bm25_scores.get(idx, 0),
@@ -285,7 +294,7 @@ def run_chat_session(args: argparse.Namespace, cfg: RAGConfig):
     print("Initializing TokenSmith Chat...")
     try:
         artifacts_dir = cfg.get_artifacts_directory()
-        faiss_idx, bm25_idx, chunks, sources, meta = load_artifacts(artifacts_dir, args.index_prefix)
+        faiss_idx, bm25_idx, chunks, sources, meta, parent_map = load_artifacts(artifacts_dir, args.index_prefix)
         print(f"Loaded {len(chunks)} chunks and {len(sources)} sources from artifacts.")
         retrievers = [FAISSRetriever(faiss_idx, cfg.embed_model), BM25Retriever(bm25_idx)]
         if cfg.ranker_weights.get("index_keywords", 0) > 0:
@@ -293,7 +302,7 @@ def run_chat_session(args: argparse.Namespace, cfg: RAGConfig):
         
         ranker = EnsembleRanker(ensemble_method=cfg.ensemble_method, weights=cfg.ranker_weights, rrf_k=int(cfg.rrf_k))
         print("Loaded retrievers and initialized ranker.")
-        artifacts = {"chunks": chunks, "sources": sources, "retrievers": retrievers, "ranker": ranker, "meta": meta}
+        artifacts = {"chunks": chunks, "sources": sources, "retrievers": retrievers, "ranker": ranker, "meta": meta, "parent_map": parent_map}
     except Exception as e:
         print(f"ERROR: {e}. Run 'index' mode first.")
         sys.exit(1)

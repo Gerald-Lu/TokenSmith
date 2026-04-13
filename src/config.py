@@ -16,6 +16,8 @@ class RAGConfig:
     chunk_mode: str = "recursive_sections"
     chunk_size: int = 2000
     chunk_overlap: int = 200
+    parent_chunk_size: int = 8000
+    parent_chunk_overlap: int = 400
 
     # retrieval + ranking
     top_k: int = 10
@@ -82,7 +84,9 @@ class RAGConfig:
         if self.chunk_mode == "recursive_sections":
             return SectionRecursiveConfig(
                 recursive_chunk_size=self.chunk_size,
-                recursive_overlap=self.chunk_overlap
+                recursive_overlap=self.chunk_overlap,
+                parent_chunk_size=self.parent_chunk_size,
+                parent_chunk_overlap=self.parent_chunk_overlap
             )
         else:
             raise ValueError(f"Unknown chunk_mode: {self.chunk_mode}. Supported: recursive_sections")

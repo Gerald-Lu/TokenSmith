@@ -21,13 +21,17 @@ class SectionRecursiveConfig(ChunkConfig):
     """Configuration for section-based chunking with recursive splitting."""
     recursive_chunk_size: int
     recursive_overlap: int
+    parent_chunk_size: int
+    parent_chunk_overlap: int
     
     def to_string(self) -> str:
-        return f"chunk_mode=sections+recursive, chunk_size={self.recursive_chunk_size}, overlap={self.recursive_overlap}"
+        return f"chunk_mode=sections+recursive, chunk_size={self.recursive_chunk_size}, overlap={self.recursive_overlap}, parent_size={self.parent_chunk_size}"
 
     def validate(self):
         assert self.recursive_chunk_size > 0, "recursive_chunk_size must be > 0"
         assert self.recursive_overlap >= 0, "recursive_overlap must be >= 0"
+        assert self.parent_chunk_size > 0, "parent_chunk_size must be > 0"
+        assert self.parent_chunk_overlap >= 0, "parent_chunk_overlap must be >= 0"
 
 # -------------------------- Chunking Strategies --------------------------
 
@@ -38,7 +42,7 @@ class ChunkStrategy(ABC):
         pass
     
     @abstractmethod
-    def chunk(self, text: str) -> List[str]:
+    def chunk(self, text: str) -> List[dict]:
         pass
     
     @abstractmethod
@@ -55,6 +59,8 @@ class SectionRecursiveStrategy(ChunkStrategy):
         self.config = config
         self.recursive_chunk_size = config.recursive_chunk_size
         self.recursive_overlap = config.recursive_overlap
+        self.parent_chunk_size = config.parent_chunk_size
+        self.parent_chunk_overlap = config.parent_chunk_overlap
 
     def name(self) -> str:
         return f"sections+recursive({self.recursive_chunk_size},{self.recursive_overlap})"
@@ -62,17 +68,28 @@ class SectionRecursiveStrategy(ChunkStrategy):
     def artifact_folder_name(self) -> str:
         return "sections"
 
-    def chunk(self, text: str) -> List[str]:
+    def chunk(self, text: str) -> List[dict]:
         """
-        Recursively splits text into smaller chunks based on sentence boundaries.
-        If a chunk exceeds recursive_chunk_size, it is further split.
+        Recursively splits text into parent chunks and then smaller child chunks.
         """
-        splitter = RecursiveCharacterTextSplitter(
+        parent_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=self.parent_chunk_size,
+            chunk_overlap=self.parent_chunk_overlap,
+            separators=[". "]
+        )
+        child_splitter = RecursiveCharacterTextSplitter(
             chunk_size=self.recursive_chunk_size,
             chunk_overlap=self.recursive_overlap,
             separators=[". "]
         )
-        return splitter.split_text(text)
+        
+        results = []
+        parent_chunks = parent_splitter.split_text(text)
+        for parent_text in parent_chunks:
+            child_chunks = child_splitter.split_text(parent_text)
+            for child_text in child_chunks:
+                results.append({"child": child_text, "parent": parent_text})
+        return results
 
 # ----------------------------- Document Chunker ---------------------------------
 
@@ -106,7 +123,7 @@ class DocumentChunker:
                 chunk = chunk.replace(ph, t)
         return chunk
 
-    def chunk(self, text: str) -> List[str]:
+    def chunk(self, text: str) -> List[dict]:
         if not text:
             return []
         work = text
@@ -120,5 +137,7 @@ class DocumentChunker:
             chunks = self.strategy.chunk(work)
 
         if self.keep_tables and tables:
-            chunks = [self._restore_tables(c, tables) for c in chunks]
+            for c in chunks:
+                c["child"] = self._restore_tables(c["child"], tables)
+                c["parent"] = self._restore_tables(c["parent"], tables)
         return chunks
