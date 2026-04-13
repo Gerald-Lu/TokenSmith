@@ -180,7 +180,7 @@ async def lifespan(app: FastAPI):
 
     try:
         artifacts_dir = _config.get_artifacts_directory()
-        faiss_index, bm25_index, chunks, sources, metadata = load_artifacts(
+        faiss_index, bm25_index, chunks, sources, metadata, parent_map = load_artifacts(
             artifacts_dir=artifacts_dir,
             index_prefix=INDEX_PREFIX
         )
@@ -189,6 +189,7 @@ async def lifespan(app: FastAPI):
             "chunks": chunks,
             "sources": sources,
             "meta": metadata,
+            "parent_map": parent_map,
         }
 
         _retrievers = [
@@ -383,7 +384,15 @@ async def chat_stream(request: ChatRequest):
     else:
         topk_idxs, ordered_ranked_scores = _retrieve_and_rank(request.query, top_k=max_chunks)
         topk_idxs = [int(i) for i in topk_idxs]
-        ranked_chunks = [chunks[i] for i in topk_idxs[:max_chunks]]
+        
+        parent_map = _artifacts.get("parent_map", {})
+        ranked_chunks = []
+        seen_texts = set()
+        for idx in topk_idxs[:max_chunks]:
+            text = parent_map.get(str(idx)) or parent_map.get(idx) or chunks[idx]
+            if text not in seen_texts:
+                ranked_chunks.append(text)
+                seen_texts.add(text)
     
     if not _config.gen_model:
         raise HTTPException(status_code=500, detail="Model path not configured.")
@@ -521,7 +530,14 @@ async def chat(request: ChatRequest):
             topk_idxs = [int(i) for i in (topk_idxs or [])]
             ordered_ranked_scores = ordered_ranked_scores or {}
 
-            ranked_chunks = [chunks[i] for i in topk_idxs[:max_chunks]]
+            parent_map = _artifacts.get("parent_map", {})
+            ranked_chunks = []
+            seen_texts = set()
+            for idx in topk_idxs[:max_chunks]:
+                text = parent_map.get(str(idx)) or parent_map.get(idx) or chunks[idx]
+                if text not in seen_texts:
+                    ranked_chunks.append(text)
+                    seen_texts.add(text)
 
         if not _config.gen_model:
             raise HTTPException(status_code=500, detail="Model path not configured.")

@@ -76,7 +76,11 @@ def test_end_to_end_pipeline_stubbed():
         "sources": sources,
         "retrievers": retrievers,
         "ranker": ranker,
-        "meta": [{"page_numbers": [1]} for _ in chunks]
+        "meta": [{"page_numbers": [1]} for _ in chunks],
+        "parent_map": {
+            "0": "Parent Chunk 1: The full context of chunk 1.",
+            "1": "Parent Chunk 2: The full context of chunk 2."
+        }
     }
     
     # Mock the Generator
@@ -139,7 +143,8 @@ def test_end_to_end_pipeline_stubbed():
         # Check chunk content is correct in info
         for info in chunks_info:
             cid = info["chunk_id"]
-            assert info["content"] == chunks[cid]
+            expected_content = artifacts["parent_map"].get(cid) or artifacts["parent_map"].get(str(cid)) or chunks[cid]
+            assert info["content"] == expected_content
         
         # Check that answer() was called with correct context
         assert mock_answer_func.call_count == 2
@@ -153,7 +158,7 @@ def test_end_to_end_pipeline_stubbed():
         assert passed_query == question
         assert len(passed_chunks) == 2
         # Check that the passed chunks contain the text we expect
-        # Note: chunks might be passed exactly as they are in the 'chunks' list
-        assert any("Python is a programming language." in c for c in passed_chunks)
+        # Note: chunk 0 is mapped to its parent chunk 1! Chunk 2 is unmapped so it's the original chunk.
+        assert any("Parent Chunk 1: The full context of chunk 1." in c for c in passed_chunks)
         assert any("Machine learning uses statistics." in c for c in passed_chunks)
 
