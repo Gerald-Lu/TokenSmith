@@ -189,6 +189,7 @@ def get_tokensmith_answer(question, config, golden_chunks=None):
 
     # Create RAGConfig from our test config
     cfg = RAGConfig(
+        gen_model=config.get("model_path"),
         chunk_mode=config.get("chunk_mode", "recursive_sections"),
         top_k=config.get("top_k", 10),
         embed_model=config.get("embed_model"),

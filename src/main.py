@@ -221,11 +221,30 @@ def get_answer(
 
     if is_test_mode:
         # We do not render MD in the test mode
+        # ans = ""
+        # for delta in stream_iter:
+        #     ans += delta
+        # ans = dedupe_generated_text(ans)
+        # return ans, chunks_info, hyde_query
+
         ans = ""
         for delta in stream_iter:
             ans += delta
         ans = dedupe_generated_text(ans)
-        return ans, chunks_info, hyde_query
+        final_chunks_info = []
+        if chunks_info:
+            for new_rank, text in enumerate(ranked_chunks, 1):
+                meta = next((c for c in chunks_info if c["content"] == text), None)
+                if meta:
+                    new_meta = meta.copy()
+                    new_meta["rank"] = new_rank
+                    final_chunks_info.append(new_meta)
+                else:
+                    final_chunks_info.append({"rank": new_rank, "chunk_id": "reranked_chunk","content": text,"faiss_score": 0,"faiss_rank": 0,"bm25_score": 0,"bm25_rank": 0,"index_score": 0,"index_rank": 0,
+                    })
+        else:
+            final_chunks_info = chunks_info
+        return ans, final_chunks_info, hyde_query
     else:
         # Accumulate the full text while rendering incremental Markdown chunks
         ans = render_streaming_ans(console, stream_iter)
