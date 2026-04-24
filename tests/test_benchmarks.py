@@ -189,6 +189,7 @@ def get_tokensmith_answer(question, config, golden_chunks=None):
 
     # Create RAGConfig from our test config
     cfg = RAGConfig(
+        gen_model=config.get("model_path"),
         chunk_mode=config.get("chunk_mode", "recursive_sections"),
         top_k=config.get("top_k", 10),
         embed_model=config.get("embed_model"),
@@ -224,7 +225,7 @@ def get_tokensmith_answer(question, config, golden_chunks=None):
 
     # Run the query through the main pipeline
     artifacts_dir = cfg.get_artifacts_directory()
-    faiss_index, bm25_index, chunks, sources, metadata = load_artifacts(
+    faiss_index, bm25_index, chunks, sources, metadata, parent_map = load_artifacts(
         artifacts_dir=artifacts_dir, 
         index_prefix=config["index_prefix"]
     )
@@ -253,6 +254,7 @@ def get_tokensmith_answer(question, config, golden_chunks=None):
         "retrievers": retrievers,
         "ranker": ranker,
         "metadata": metadata,
+        "parent_map": parent_map,
     }
 
     result = get_answer(

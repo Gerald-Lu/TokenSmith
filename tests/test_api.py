@@ -635,7 +635,7 @@ class TestLoadArtifacts:
                 pickle.dump(meta, f)
             
             # Load and verify
-            faiss_idx, bm25_idx, loaded_chunks, loaded_sources, loaded_meta = load_artifacts(
+            faiss_idx, bm25_idx, loaded_chunks, loaded_sources, loaded_meta, loaded_parent_map = load_artifacts(
                 tmpdir, prefix
             )
             
