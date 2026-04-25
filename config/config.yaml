@@ -1,5 +1,5 @@
 embed_model: "models/Qwen3-Embedding-4B-Q5_K_M.gguf"
-top_k: 3
+top_k: 10
 num_candidates: 50
 ensemble_method: "rrf"
 ranker_weights: {"faiss":1,"bm25":0,"index_keywords":0}
