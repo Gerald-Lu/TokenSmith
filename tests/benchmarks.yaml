@@ -1,5 +1,6 @@
 benchmarks:
   - id: "aggregation_grouping"
+    category: "structure_aware"
     question: "How do aggregation with grouping work?"
     expected_answer: "Aggregation partitions tuples by grouping attributes and applies functions like sum, avg, min, max to each group, producing one result per group."
     keywords: ["aggregation", "grouping", "generalized projection", "ignore nulls", "attribute renaming", "duplicates"]
@@ -7,6 +8,7 @@ benchmarks:
     ideal_retrieved_chunks: [1039, 1040, 1496, 1497, 714]
     
   - id: "acid_properties"
+    category: "factual"
     question: "What are the ACID properties of transactions?"
     expected_answer: "Atomicity ensures a transaction's actions are all-or-nothing, enforced by abort/rollback and recovery that can undo partial effects; consistency requires each transaction to preserve database integrity when run alone and relies on the scheduler to admit serializable, recoverable, and preferably cascadeless schedules; isolation makes concurrent executions equivalent to some serial order, commonly achieved with two-phase locking variants that prevent reads of uncommitted data; durability guarantees committed effects persist across crashes via logging to stable storage and redo on restart;"
     keywords: ["atomicity", "consistency", "isolation", "durability", "recoverable", "checkpoints", "two-phase locking", "two-phase commit"]
@@ -14,6 +16,7 @@ benchmarks:
     ideal_retrieved_chunks: [1143, 1142, 1145, 1146, 1148]
 
   - id: "bptree"
+    category: "multi_part"
     question: "How does a B+ tree index organize keys and support search, insert, and delete, and why is it preferred over binary trees for disk-based access"
     expected_answer: "B+-trees match node size to a disk page, giving very high fan-out and a shallow, height-balanced tree, so searches/updates require few page I/Os."
     keywords: ["fan-out", "leaf linkage", "merge", "balanced height", "reduced height"]
@@ -21,6 +24,7 @@ benchmarks:
     ideal_retrieved_chunks: [908, 909, 940, 937, 938]
 
   - id: "fd_normalization"
+    category: "factual"
     question: "What are functional dependencies?"
     expected_answer: "A functional dependency X -> Y asserts that tuples agreeing on X must agree on Y."
     keywords: ["common key", "lossless join", "dependency preservation", "normalization", "superkey"]
@@ -28,6 +32,7 @@ benchmarks:
     ideal_retrieved_chunks: [438, 439, 463, 451, 484]
 
   - id: "sql_isolation"
+    category: "factual"
     question: "What isolation guarantees does SQL provide by default?"
     expected_answer: "Serializable. In the SQL standard, the default isolation level is Serializable, which guarantees that the outcome of concurrently executing transactions is equivalent to some serial (one-at-a-time) order of those transactions—thereby preventing dirty reads, nonrepeatable reads, and phantoms."
     keywords: ["serializable", "read committed", "repeatable read", "dirty read", "nonrepeatable read", "phantom", "two-phase locking", "predicate locking"]
@@ -35,6 +40,7 @@ benchmarks:
     ideal_retrieved_chunks: [1173, 1174, 1142, 1143, 1172]
 
   - id: "primary_foreign_keys"
+    category: "factual"
     question: "Explain primary keys and foreign keys"
     expected_answer: "A primary key is a set of one or more attributes that uniquely identifies each tuple in a relation, chosen from candidate keys which are minimal superkeys; primary key attributes are underlined in schema diagrams and cannot have null values. A foreign key is a set of attributes in one relation (the referencing relation) that references the primary key of another relation (the referenced relation), establishing a referential integrity constraint that requires values in the foreign key to match values in the referenced primary key, thereby linking related data across tables."
     keywords: ["primary key", "foreign key", "unique identifier", "referential integrity", "candidate key", "superkey"]
@@ -42,6 +48,7 @@ benchmarks:
     ideal_retrieved_chunks: [90, 91, 119, 93, 94]
 
   - id: "database_schema"
+    category: "factual"
     question: "What is a database schema"
     expected_answer: "A database schema is the overall logical design and structure of the database, analogous to variable declarations in a program, defining the relations, their attributes, data types, and constraints including primary keys and foreign keys. The schema remains relatively stable over time, while a database instance represents the actual collection of data stored at a particular moment, with values that change as information is inserted, deleted, or modified."
     keywords: ["database schema", "logical design", "structure", "database instance", "relations", "attributes", "constraints"]
@@ -49,6 +56,7 @@ benchmarks:
     ideal_retrieved_chunks: [49, 50, 51, 250, 60]
 
   - id: "book_authors"
+    category: "factual"
     question: "Tell me about the authors of the book"
     expected_answer: "The authors of Database System Concepts Seventh Edition are Abraham Silberschatz, a Professor at Yale University and former Bell Labs vice president who is an ACM and IEEE fellow; Henry F. Korth, a Professor at Lehigh University who previously worked at Bell Labs and is also an ACM and IEEE fellow; and S. Sudarshan, the Subrao M. Nilekani Chair Professor at the Indian Institute of Technology Bombay who received his Ph.D. from the University of Wisconsin and is an ACM fellow, with research focusing on query processing and optimization."
     keywords: ["Abraham Silberschatz", "Henry Korth", "Sudarshan", "Yale", "Lehigh", "IIT Bombay", "Bell Labs"]
@@ -56,6 +64,7 @@ benchmarks:
     ideal_retrieved_chunks: [1, 2, 0, 3, 22]
 
   - id: "aries_atomicity"
+    category: "multi_part"
     question: "How does the recovery manager use ARIES to ensure atomicity"
     expected_answer: "The ARIES recovery algorithm ensures atomicity by maintaining a write-ahead log where all updates are recorded before being applied to the database, with each log record containing transaction ID, data item, old value, and new value. During normal operation, log records are written to stable storage before the transaction commits; if a transaction aborts or the system crashes, the recovery manager uses the log to undo uncommitted transactions by applying the old values in reverse order, ensuring that partial effects of incomplete transactions are completely rolled back and the all-or-nothing property of atomicity is preserved."
     keywords: ["ARIES", "write-ahead log", "log records", "undo", "rollback", "stable storage", "atomicity", "recovery"]
@@ -63,6 +72,7 @@ benchmarks:
     ideal_retrieved_chunks: [1355, 1356, 1358, 1353, 1359]
 
   - id: "oltp_vs_analytics"
+    category: "multi_part"
     question: "Contrast the goals of Online Transaction Processing and data analytics"
     expected_answer: "Online Transaction Processing (OLTP) supports a large number of concurrent users performing small, fast transactions that retrieve and update relatively small amounts of data with requirements for high throughput, low latency, and immediate consistency, typically using normalized schemas optimized for transactional integrity. Data analytics, in contrast, processes large volumes of historical data to draw conclusions and infer patterns for business intelligence and decision support, involving complex queries that scan and aggregate data across many records, often using denormalized schemas like star schemas in data warehouses optimized for read-heavy analytical workloads rather than transactional updates."
     keywords: ["OLTP", "online transaction processing", "data analytics", "business intelligence", "decision support", "throughput", "data warehouse", "transactional", "analytical"]
@@ -70,8 +80,387 @@ benchmarks:
     ideal_retrieved_chunks: [33, 34, 738, 739, 741]
 
   - id: "lossy_decomposition"
+    category: "structure_aware"
     question: "Show me what happens during a lossy decomposition"
     expected_answer: "A lossy decomposition occurs when a relation R is decomposed into smaller relations R1 and R2 such that joining them back together produces spurious tuples not present in the original relation, resulting in loss of information about which attribute combinations actually existed. This happens when the intersection of R1 and R2 does not form a superkey for either relation, violating the lossless-join condition; the natural join of the decomposed relations generates extra tuples from invalid combinations, making it impossible to reconstruct the original data accurately, which is why database design insists that all decompositions must be lossless."
     keywords: ["lossy decomposition", "spurious tuples", "lossless join", "superkey", "natural join", "information loss", "functional dependency"]
     similarity_threshold: 0.70
     ideal_retrieved_chunks: [431, 430, 432, 433, 440]
+
+  - id: "tuple_definition"
+    category: "factual"
+    question: "What is a tuple in the relational model?"
+    expected_answer: "A tuple is a single row of a relation, an ordered or named set of attribute values drawn from the attribute domains of the relation's schema."
+    keywords: ["tuple", "row", "relation", "attribute", "domain"]
+    similarity_threshold: 0.65
+
+  - id: "attribute_domain"
+    category: "factual"
+    question: "What is the domain of an attribute?"
+    expected_answer: "The domain of an attribute is the set of permitted atomic values that the attribute may take, and values outside the domain are not allowed."
+    keywords: ["domain", "attribute", "atomic", "permitted values", "type"]
+    similarity_threshold: 0.65
+
+  - id: "natural_join"
+    category: "factual"
+    question: "What is a natural join in relational algebra?"
+    expected_answer: "A natural join combines two relations on all attributes that share the same name, keeping one copy of each common attribute and discarding tuples whose common attribute values do not match."
+    keywords: ["natural join", "common attributes", "match", "relational algebra", "equijoin"]
+    similarity_threshold: 0.7
+
+  - id: "cartesian_product"
+    category: "factual"
+    question: "What is the Cartesian product operation in relational algebra?"
+    expected_answer: "The Cartesian product of two relations pairs every tuple from the first with every tuple from the second, producing a relation whose schema is the concatenation of both input schemas."
+    keywords: ["Cartesian product", "cross product", "pairs", "concatenation", "relational algebra"]
+    similarity_threshold: 0.7
+
+  - id: "ddl_vs_dml"
+    category: "factual"
+    question: "What is the difference between DDL and DML in SQL?"
+    expected_answer: "DDL defines and modifies schema objects with statements like CREATE, ALTER, and DROP, while DML manipulates the data inside those objects with statements like SELECT, INSERT, UPDATE, and DELETE."
+    keywords: ["DDL", "DML", "CREATE", "ALTER", "DROP", "INSERT", "UPDATE", "DELETE", "schema"]
+    similarity_threshold: 0.7
+
+  - id: "view_definition"
+    category: "factual"
+    question: "What is a view in SQL?"
+    expected_answer: "A view is a named query whose result is treated as a virtual relation that is recomputed from the underlying base relations whenever the view is referenced."
+    keywords: ["view", "virtual relation", "named query", "base relation"]
+    similarity_threshold: 0.65
+
+  - id: "trigger_definition"
+    category: "factual"
+    question: "What is a trigger in SQL?"
+    expected_answer: "A trigger is a procedural action automatically executed by the DBMS in response to a specified event such as an insert, update, or delete on a table, optionally guarded by a condition."
+    keywords: ["trigger", "event", "procedural", "row", "statement", "before", "after"]
+    similarity_threshold: 0.65
+
+  - id: "index_definition"
+    category: "factual"
+    question: "What is a database index?"
+    expected_answer: "A database index is an auxiliary data structure that maps search-key values to the locations of records, allowing the DBMS to retrieve matching records without scanning the entire relation."
+    keywords: ["index", "search key", "auxiliary structure", "lookup", "pointer"]
+    similarity_threshold: 0.65
+
+  - id: "dirty_read"
+    category: "factual"
+    question: "What is a dirty read?"
+    expected_answer: "A dirty read occurs when one transaction reads a value written by another transaction that has not yet committed, so the reader may use a value that is later rolled back."
+    keywords: ["dirty read", "uncommitted", "rollback", "isolation", "anomaly"]
+    similarity_threshold: 0.65
+
+  - id: "deadlock_concept"
+    category: "factual"
+    question: "What is a deadlock in a DBMS?"
+    expected_answer: "A deadlock is a state in which two or more transactions wait indefinitely for locks held by each other, forming a cycle in the wait-for graph that no transaction can resolve on its own."
+    keywords: ["deadlock", "wait-for graph", "cycle", "lock", "victim"]
+    similarity_threshold: 0.65
+
+  - id: "checkpoint_concept"
+    category: "factual"
+    question: "What is a checkpoint in database recovery?"
+    expected_answer: "A checkpoint is a point in the log at which dirty buffers are flushed and a checkpoint record is written, bounding how far back recovery must scan the log after a crash."
+    keywords: ["checkpoint", "log", "dirty pages", "flush", "recovery", "redo"]
+    similarity_threshold: 0.65
+
+  - id: "shadow_paging"
+    category: "factual"
+    question: "What is shadow paging?"
+    expected_answer: "Shadow paging keeps a current page table and a shadow page table; updates write new pages and switch the current pointer atomically at commit, so a crash leaves the shadow consistent without using a log."
+    keywords: ["shadow paging", "page table", "current", "shadow", "atomic switch"]
+    similarity_threshold: 0.65
+
+  - id: "nosql_definition"
+    category: "factual"
+    question: "What is a NoSQL database?"
+    expected_answer: "NoSQL databases are non-relational stores designed for horizontal scalability and flexible schemas, including key-value, document, column-family, and graph systems that often relax ACID guarantees in favor of availability and partition tolerance."
+    keywords: ["NoSQL", "key-value", "document", "graph", "column-family", "BASE", "horizontal scaling"]
+    similarity_threshold: 0.65
+
+  - id: "candidate_key"
+    category: "factual"
+    question: "What is a candidate key?"
+    expected_answer: "A candidate key is a minimal superkey of a relation, meaning a set of attributes that uniquely identifies each tuple and from which no attribute can be removed while preserving uniqueness."
+    keywords: ["candidate key", "minimal", "superkey", "uniqueness", "identifier"]
+    similarity_threshold: 0.65
+
+  - id: "two_phase_locking_strict"
+    category: "multi_part"
+    question: "How does two-phase locking work and what changes under strict and rigorous variants?"
+    expected_answer: "Two-phase locking has a growing phase where a transaction acquires locks and a shrinking phase where it only releases them, which guarantees conflict serializability. Strict 2PL holds all exclusive locks until commit or abort, preventing cascading aborts; rigorous 2PL holds all locks of any kind until commit, also preventing nonrepeatable reads from concurrent updates."
+    keywords: ["two-phase locking", "growing", "shrinking", "strict 2PL", "rigorous 2PL", "cascading abort", "serializability"]
+    similarity_threshold: 0.7
+
+  - id: "timestamp_ordering"
+    category: "multi_part"
+    question: "How does timestamp ordering enforce serializability and how does it compare to lock-based concurrency control?"
+    expected_answer: "Timestamp ordering assigns each transaction a unique timestamp and aborts any transaction that issues a read or write violating that order, producing a serializable schedule equivalent to the timestamp order. Compared to locking it never deadlocks but can suffer from cascading rollbacks and starvation, especially under contention, since rejected transactions must restart with new timestamps."
+    keywords: ["timestamp ordering", "serializable", "deadlock-free", "starvation", "rollback", "Thomas write rule"]
+    similarity_threshold: 0.7
+
+  - id: "mvcc_vs_locks"
+    category: "multi_part"
+    question: "How does multi-version concurrency control work and how does it differ from lock-based concurrency?"
+    expected_answer: "MVCC keeps multiple versions of each data item; readers see the version that was committed before their snapshot, while writers create new versions, so reads never block writes and writes never block reads. Unlike pure lock-based protocols which serialize conflicting reads and writes, MVCC trades extra storage and version cleanup for higher read concurrency, but still needs a conflict check or locks for write-write conflicts."
+    keywords: ["MVCC", "snapshot", "versions", "read does not block write", "write conflict", "garbage collection"]
+    similarity_threshold: 0.7
+
+  - id: "join_algorithms_compare"
+    category: "multi_part"
+    question: "Compare nested-loop join, sort-merge join, and hash join in terms of cost and when each is preferred."
+    expected_answer: "Nested-loop join is simple and good for small inner relations or when an index exists on the join attribute, with worst-case cost proportional to the product of the input sizes. Sort-merge join is preferred when inputs are already sorted or close to sorted on the join attribute and produces sorted output, with cost dominated by the sort. Hash join builds an in-memory hash table on the smaller input and probes with the larger, giving near-linear cost when the build side fits in memory and is the usual choice for large equijoins on unsorted data."
+    keywords: ["nested loop", "sort merge", "hash join", "build", "probe", "equijoin", "cost", "memory"]
+    similarity_threshold: 0.7
+
+  - id: "external_merge_sort"
+    category: "multi_part"
+    question: "How does external merge sort work and what factors drive its I/O cost?"
+    expected_answer: "External merge sort first creates sorted runs of size equal to available buffer pages, then repeatedly merges k runs at a time using k+1 buffers until one run remains. Total I/O cost depends on the number of input pages, the buffer size which controls run length and merge fan-in, and the number of merge passes, roughly 2N times the ceiling of log base k of the initial run count."
+    keywords: ["external sort", "runs", "merge", "buffer pages", "fan-in", "passes", "I/O cost"]
+    similarity_threshold: 0.7
+
+  - id: "query_optimizer_costing"
+    category: "multi_part"
+    question: "How does a cost-based query optimizer estimate plan cost and choose among alternatives?"
+    expected_answer: "A cost-based optimizer enumerates equivalent logical and physical plans, estimates the size of intermediate results using catalog statistics like cardinalities, distinct values, and histograms, and applies cost formulas for each operator that combine I/O, CPU, and memory usage. It then picks the plan with the lowest estimated total cost, often using dynamic programming for join order and pruning dominated subplans."
+    keywords: ["cost-based optimizer", "statistics", "cardinality estimation", "histogram", "join order", "dynamic programming", "plan enumeration"]
+    similarity_threshold: 0.7
+
+  - id: "two_phase_commit"
+    category: "multi_part"
+    question: "How does two-phase commit guarantee atomicity in distributed transactions and when can it block?"
+    expected_answer: "In two-phase commit, a coordinator first sends a prepare message and each participant durably votes to commit or abort; if all vote yes, the coordinator logs and broadcasts commit, otherwise abort, and participants follow the decision. The protocol blocks if the coordinator fails after participants have voted but before delivering the decision, since participants holding locks cannot unilaterally decide and must wait for the coordinator to recover."
+    keywords: ["two-phase commit", "coordinator", "participant", "prepare", "vote", "blocking", "atomicity"]
+    similarity_threshold: 0.7
+
+  - id: "raid_levels"
+    category: "multi_part"
+    question: "How do RAID 0, RAID 1, and RAID 5 differ in performance and reliability?"
+    expected_answer: "RAID 0 stripes data across disks for high throughput but provides no redundancy, so any single disk failure loses data. RAID 1 mirrors each block on a second disk, doubling cost but tolerating single-disk failures and improving read performance. RAID 5 stripes data with one parity block per stripe distributed across disks, surviving one disk failure with much less storage overhead than mirroring but with a write penalty due to parity computation."
+    keywords: ["RAID 0", "RAID 1", "RAID 5", "striping", "mirroring", "parity", "redundancy", "write penalty"]
+    similarity_threshold: 0.7
+
+  - id: "buffer_replacement"
+    category: "multi_part"
+    question: "How does the buffer manager decide which page to evict and how do LRU, toss-immediate, and clock policies compare?"
+    expected_answer: "The buffer manager evicts an unpinned page chosen by the replacement policy when a new page must be brought in. LRU evicts the least recently used page and works well for general workloads but performs badly on repeated full scans; toss-immediate frees pages that the optimizer knows will not be needed again, useful for sequential operators; clock approximates LRU with a circular reference-bit scan, giving similar behavior with much lower bookkeeping cost."
+    keywords: ["buffer pool", "replacement policy", "LRU", "toss-immediate", "clock", "pin", "eviction"]
+    similarity_threshold: 0.7
+
+  - id: "acid_vs_base"
+    category: "multi_part"
+    question: "How do ACID properties differ from the BASE properties used in many NoSQL stores?"
+    expected_answer: "ACID guarantees atomicity, consistency, isolation, and durability for each transaction, providing strict correctness even under concurrency and failures. BASE stands for basically available, soft state, and eventual consistency, sacrificing immediate consistency and strict isolation in exchange for higher availability and horizontal scalability, so updates may be observed in different orders by different replicas before they converge."
+    keywords: ["ACID", "BASE", "eventual consistency", "availability", "partition tolerance", "CAP", "replication"]
+    similarity_threshold: 0.7
+
+  - id: "log_recovery_passes"
+    category: "multi_part"
+    question: "How do the analysis, redo, and undo phases of log-based recovery interact?"
+    expected_answer: "Recovery starts with an analysis pass that scans forward from the last checkpoint to identify dirty pages and active transactions at the time of crash. The redo pass then reapplies all logged updates whose effects may not have reached disk, restoring the database to its state at crash. Finally, the undo pass walks the log backward to roll back transactions that were active but not committed, restoring atomicity."
+    keywords: ["analysis", "redo", "undo", "checkpoint", "log", "ARIES", "recovery"]
+    similarity_threshold: 0.7
+
+  - id: "denormalization_tradeoff"
+    category: "multi_part"
+    question: "When is denormalization useful and what tradeoffs does it create?"
+    expected_answer: "Denormalization stores redundant or precomputed data to avoid expensive joins or aggregations on read-heavy workloads, improving query latency and throughput. The cost is increased storage, more complex update logic to keep redundant copies consistent, and a higher risk of update anomalies, so it is typically applied selectively in data warehouses or hot paths after profiling shows joins as the bottleneck."
+    keywords: ["denormalization", "redundancy", "join cost", "update anomaly", "data warehouse", "read-heavy"]
+    similarity_threshold: 0.7
+
+  - id: "partitioning_strategies"
+    category: "multi_part"
+    question: "Compare range, hash, and round-robin partitioning for distributed data."
+    expected_answer: "Range partitioning assigns tuples to partitions based on intervals of the partitioning attribute, supporting efficient range queries but risking skew when data is unevenly distributed. Hash partitioning applies a hash function to the partitioning attribute, producing balanced partitions ideal for point lookups and equijoins but losing locality for range queries. Round-robin partitioning assigns tuples cyclically to partitions, giving perfect load balance for scans but requiring all partitions to be probed for any selective query."
+    keywords: ["range partitioning", "hash partitioning", "round-robin", "skew", "load balance", "locality"]
+    similarity_threshold: 0.7
+
+  - id: "star_vs_snowflake"
+    category: "multi_part"
+    question: "How do star and snowflake schemas differ and when would you choose one over the other?"
+    expected_answer: "A star schema has a central fact table joined to denormalized dimension tables, giving simple, wide tables and fast queries with few joins. A snowflake schema further normalizes the dimensions into multiple related tables, saving storage and easing dimension updates at the cost of more joins per query, so it is preferred when dimensions are large or evolve frequently while a star schema is preferred for read-heavy analytical workloads where query simplicity and speed matter most."
+    keywords: ["star schema", "snowflake schema", "fact table", "dimension table", "normalization", "data warehouse"]
+    similarity_threshold: 0.7
+
+  - id: "join_order_dp"
+    category: "multi_part"
+    question: "How does dynamic programming join enumeration find a good join order and what is its complexity?"
+    expected_answer: "Dynamic programming join enumeration builds optimal plans for every nonempty subset of the relations to be joined by combining best plans of smaller subsets, considering both join methods and join orderings. With n relations the number of subsets is 2^n, and within each subset O(2^n) splits are considered, giving overall complexity around O(3^n) for the bushy version, which is tractable for moderate n but typically restricted to left-deep trees in practice."
+    keywords: ["dynamic programming", "join order", "subsets", "left-deep", "bushy", "complexity"]
+    similarity_threshold: 0.65
+
+  - id: "phantom_predicate_locking"
+    category: "multi_part"
+    question: "How can phantom reads occur under repeatable read and how does predicate locking prevent them?"
+    expected_answer: "Under repeatable read, a transaction holds locks on rows it has read, but a concurrent insert can add a new row matching the same predicate, so a re-execution of the query returns extra phantom rows. Predicate locking locks the predicate itself, blocking inserts and updates that would cause a tuple to satisfy the predicate, which eliminates phantoms but is expensive in general; index-range locking is the common practical approximation."
+    keywords: ["phantom read", "predicate locking", "index-range locking", "repeatable read", "isolation"]
+    similarity_threshold: 0.7
+
+  - id: "erd_to_relational"
+    category: "multi_part"
+    question: "How is an entity-relationship diagram with weak entities translated into relations?"
+    expected_answer: "Each strong entity becomes a relation whose primary key is its set of identifying attributes, while each weak entity becomes a relation that includes its discriminator together with the primary key of its identifying entity, with that combination serving as the weak entity's primary key. Relationships of various cardinalities are then represented either as foreign keys in one of the entity relations or as separate relations, depending on multiplicity, and total participation constraints add NOT NULL or referential actions as needed."
+    keywords: ["ER diagram", "weak entity", "discriminator", "identifying relationship", "foreign key", "schema translation"]
+    similarity_threshold: 0.65
+
+  - id: "log_in_distributed_systems"
+    category: "multi_part"
+    question: "How does write-ahead logging combine with replication to provide durability and high availability?"
+    expected_answer: "Write-ahead logging guarantees that log records reach stable storage before the corresponding data pages, so a crash on a single node can be recovered using the local log. Combining WAL with replication, log records are also shipped to one or more replicas which apply them to keep their state in sync, so a node failure can be masked by promoting an up-to-date replica, providing both durability and high availability with controlled data loss bounds."
+    keywords: ["write-ahead log", "replication", "log shipping", "failover", "durability", "high availability"]
+    similarity_threshold: 0.65
+
+  - id: "isolation_anomaly_table"
+    category: "multi_part"
+    question: "Which isolation levels prevent which anomalies and what is the typical performance tradeoff?"
+    expected_answer: "Read uncommitted prevents nothing and allows dirty reads; read committed prevents dirty reads but allows nonrepeatable reads and phantoms; repeatable read prevents dirty and nonrepeatable reads but still allows phantoms in many implementations; serializable prevents all three at the cost of more aborts or blocking. As isolation strengthens, throughput typically drops and latency rises because more locks or aborts are required to forbid the additional anomalies."
+    keywords: ["read uncommitted", "read committed", "repeatable read", "serializable", "dirty read", "nonrepeatable", "phantom"]
+    similarity_threshold: 0.7
+
+  - id: "fragmentation_horizontal_vertical"
+    category: "multi_part"
+    question: "How do horizontal and vertical fragmentation differ in distributed databases?"
+    expected_answer: "Horizontal fragmentation splits a relation by rows using a selection predicate, so each fragment contains a subset of the tuples with the full schema. Vertical fragmentation splits by columns using projection plus the primary key, so each fragment contains all tuples but only a subset of attributes. Horizontal fragments support partitioned parallel operators well; vertical fragments help when typical queries access only a few attributes at a time but require joins on the primary key to reconstruct the original relation."
+    keywords: ["horizontal fragmentation", "vertical fragmentation", "selection", "projection", "distribution", "reconstruction"]
+    similarity_threshold: 0.65
+
+  - id: "relational_algebra_operations"
+    category: "structure_aware"
+    question: "List the fundamental operations of relational algebra and describe each."
+    expected_answer: "The fundamental operations are selection, which keeps tuples satisfying a predicate; projection, which keeps a chosen subset of attributes; union, which returns tuples in either of two union-compatible relations; set difference, which returns tuples in one relation and not the other; Cartesian product, which pairs every tuple of one relation with every tuple of the other; and rename, which assigns new names to a relation or its attributes. All other relational algebra operators can be derived from these."
+    keywords: ["selection", "projection", "union", "set difference", "Cartesian product", "rename", "relational algebra"]
+    similarity_threshold: 0.7
+
+  - id: "normal_forms_walkthrough"
+    category: "structure_aware"
+    question: "Walk through normal forms 1NF, 2NF, 3NF, and BCNF and their conditions."
+    expected_answer: "1NF requires that all attribute values be atomic and that there be no repeating groups. 2NF additionally forbids partial dependencies, meaning every non-prime attribute must be fully functionally dependent on every candidate key. 3NF forbids transitive dependencies of non-prime attributes on the key, allowing only dependencies whose left side is a superkey or whose right side is a prime attribute. BCNF is stricter still, requiring that for every nontrivial functional dependency the left side be a superkey, eliminating most update anomalies but sometimes at the cost of dependency preservation."
+    keywords: ["1NF", "2NF", "3NF", "BCNF", "atomic", "partial dependency", "transitive dependency", "superkey", "anomaly"]
+    similarity_threshold: 0.7
+
+  - id: "erd_components"
+    category: "structure_aware"
+    question: "What are the main components of an entity-relationship diagram?"
+    expected_answer: "An ER diagram contains entity sets drawn as rectangles, attributes drawn as ovals attached to their entity sets, relationships drawn as diamonds connecting entity sets, and cardinality and participation constraints drawn on the relationship lines. Specializations include weak entity sets with double rectangles, identifying relationships with double diamonds, derived attributes with dashed ovals, and primary key attributes underlined in their oval."
+    keywords: ["entity set", "attribute", "relationship", "cardinality", "participation", "weak entity", "primary key"]
+    similarity_threshold: 0.7
+
+  - id: "transaction_states"
+    category: "structure_aware"
+    question: "Describe the states of a transaction and the transitions between them."
+    expected_answer: "A transaction starts in the active state where it issues reads and writes; on completing its last action it enters the partially committed state, then on a successful durability write moves to committed. If something prevents normal completion it enters failed, from which it transitions to aborted after rollback, and aborted transactions are either restarted from the beginning or killed depending on the cause."
+    keywords: ["active", "partially committed", "committed", "failed", "aborted", "rollback", "transaction state"]
+    similarity_threshold: 0.7
+
+  - id: "btree_vs_bplus"
+    category: "structure_aware"
+    question: "Structurally, how does a B-tree differ from a B+-tree?"
+    expected_answer: "In a B-tree both internal and leaf nodes can hold data records or pointers to them, so a search may stop at any level. In a B+-tree only the leaf nodes store records or pointers to them while internal nodes store only routing keys, and the leaf nodes are linked together to support efficient range scans. B+-trees therefore have higher fan-out and better support for sequential access while B-trees can occasionally answer point lookups slightly faster because matches may be found above the leaves."
+    keywords: ["B-tree", "B+ tree", "leaf", "internal node", "fan-out", "linked leaves", "range scan"]
+    similarity_threshold: 0.7
+
+  - id: "hash_index_organization"
+    category: "structure_aware"
+    question: "How are tuples organized in a static hash index?"
+    expected_answer: "A static hash index has a fixed number of buckets; the hash function maps a search-key value to a bucket, and each bucket is a chain of pages holding the records or pointers whose keys hash to that bucket. Lookups compute the hash and scan the bucket's chain, while overflow chains form when a bucket fills up, which over time degrades performance and motivates dynamic schemes like extendable hashing."
+    keywords: ["static hashing", "bucket", "hash function", "overflow chain", "extendable hashing", "linear hashing"]
+    similarity_threshold: 0.7
+
+  - id: "lock_compatibility_matrix"
+    category: "structure_aware"
+    question: "Describe the shared and exclusive lock compatibility matrix and how upgrades are handled."
+    expected_answer: "Shared locks are mutually compatible but conflict with exclusive locks; exclusive locks conflict with both shared and exclusive locks. A transaction that already holds a shared lock can request an upgrade to exclusive, which is granted only when no other transaction holds the same data item; upgrades are typically handled with a wait queue and are a common source of deadlock, so many systems add an update or intention lock mode to mitigate it."
+    keywords: ["shared lock", "exclusive lock", "compatibility", "upgrade", "deadlock", "intention lock"]
+    similarity_threshold: 0.7
+
+  - id: "wait_die_wound_wait"
+    category: "structure_aware"
+    question: "Compare the wait-die and wound-wait deadlock prevention schemes."
+    expected_answer: "Both schemes use timestamps to make lock conflicts deterministic. In wait-die an older transaction requesting a lock held by a younger one waits, while a younger transaction requesting a lock held by an older one is aborted and restarted with the same timestamp. In wound-wait the roles are reversed: the older transaction wounds, that is forces the abort of, the younger one and continues, while a younger transaction waits for an older one. Both prevent deadlock but differ in which transactions are aborted, with wound-wait typically aborting fewer total transactions because older ones tend to make more progress."
+    keywords: ["wait-die", "wound-wait", "timestamp", "deadlock prevention", "abort", "restart"]
+    similarity_threshold: 0.7
+
+  - id: "nested_subqueries_structure"
+    category: "structure_aware"
+    question: "Show how SQL nested subqueries are structured with EXISTS and IN."
+    expected_answer: "A nested subquery appears in a WHERE or HAVING clause and produces a relation that the outer query references. With IN the outer row qualifies if its scalar value matches any value returned by the subquery, while with EXISTS the outer row qualifies if the subquery returns at least one row, often correlated to the outer query through references to outer columns. NOT IN and NOT EXISTS handle the negated cases and have important differences when nulls are involved."
+    keywords: ["nested subquery", "EXISTS", "IN", "correlated", "WHERE", "HAVING", "NOT EXISTS"]
+    similarity_threshold: 0.7
+
+  - id: "group_by_having_structure"
+    category: "structure_aware"
+    question: "Show the structure of a SQL query that uses GROUP BY with HAVING."
+    expected_answer: "Such a query has the shape SELECT grouping attributes and aggregates FROM relation WHERE row predicate GROUP BY grouping attributes HAVING group predicate ORDER BY ordering attributes. The WHERE clause filters rows before grouping, GROUP BY partitions the rows by the listed attributes, aggregate functions are computed per group, and HAVING filters out whole groups whose aggregate values fail the group predicate."
+    keywords: ["GROUP BY", "HAVING", "aggregate", "WHERE", "ORDER BY", "filter", "group"]
+    similarity_threshold: 0.7
+
+  - id: "view_materialization"
+    category: "structure_aware"
+    question: "Describe the structural difference between a virtual view and a materialized view."
+    expected_answer: "A virtual view is defined only by its query and is recomputed from the base relations on every reference, so it has no separate stored data. A materialized view stores the result of its defining query as a real relation that the system maintains, refreshing it periodically or incrementally as base data changes; structurally it carries an additional storage layer and refresh policy, trading update overhead for faster reads."
+    keywords: ["virtual view", "materialized view", "stored result", "refresh", "incremental maintenance"]
+    similarity_threshold: 0.7
+
+  - id: "log_record_format"
+    category: "structure_aware"
+    question: "What fields appear in a typical write-ahead log record?"
+    expected_answer: "A typical update log record contains a log sequence number, the transaction identifier, the data item or page identifier, a previous LSN linking the transaction's log records, an operation type, and the before- and after-images required for undo and redo. Special log record types include begin, commit, abort, checkpoint, and compensation log records used during rollback."
+    keywords: ["log sequence number", "transaction id", "before image", "after image", "redo", "undo", "compensation log record"]
+    similarity_threshold: 0.7
+
+  - id: "query_plan_tree"
+    category: "structure_aware"
+    question: "Describe the structure of a query evaluation plan as a tree of operators."
+    expected_answer: "A query plan is a tree of physical operators where leaves are scans of base relations or indexes, internal nodes are operators such as selection, projection, join, sort, aggregation, and group-by, and the root produces the final result. Each operator pulls tuples from its children using an iterator interface, and the tree's shape and operator choices together determine the plan's cost."
+    keywords: ["plan tree", "operator", "leaf scan", "iterator", "pipeline", "root"]
+    similarity_threshold: 0.7
+
+  - id: "index_organized_table"
+    category: "structure_aware"
+    question: "How is an index-organized table structured compared to a heap with a secondary index?"
+    expected_answer: "An index-organized table stores the full row inside the leaves of a primary B+-tree on the table's primary key, so primary-key access goes directly to the row with no extra indirection. A heap table stores rows in arbitrary insertion order and uses a separate secondary index whose leaves contain key-rowid pairs that point to the heap. The index-organized layout favors primary-key range scans, while the heap layout makes secondary-index updates and large updates cheaper because rows are not relocated within the primary index."
+    keywords: ["index-organized table", "heap table", "secondary index", "primary key", "leaf", "rowid"]
+    similarity_threshold: 0.7
+
+  - id: "join_dependency_graph"
+    category: "structure_aware"
+    question: "What is a join dependency graph and what does it tell us?"
+    expected_answer: "A join dependency graph has a node for each relation and an edge for each join condition between two relations, optionally annotated with the join attributes and selectivity. The graph shows the connectivity of the query, lets the optimizer detect cyclic versus acyclic queries, and guides join order enumeration since plans typically restrict joins to follow edges of this graph to avoid expensive Cartesian products."
+    keywords: ["join graph", "node", "edge", "join condition", "acyclic", "Cartesian product", "join order"]
+    similarity_threshold: 0.65
+
+  - id: "data_warehouse_layers"
+    category: "structure_aware"
+    question: "What are the structural layers of a typical data warehouse architecture?"
+    expected_answer: "A typical data warehouse has a source layer of operational systems, an ETL layer that extracts, transforms, and loads data, a staging area for intermediate cleaned data, a central warehouse with a normalized or dimensional model, optional data marts that present subject-specific subsets, and an access layer of OLAP servers and reporting tools that users query."
+    keywords: ["data warehouse", "ETL", "staging", "data mart", "OLAP", "fact", "dimension"]
+    similarity_threshold: 0.7
+
+  - id: "partition_pruning"
+    category: "structure_aware"
+    question: "How does partition pruning appear in a query plan over partitioned tables?"
+    expected_answer: "Partition pruning rewrites a scan over a partitioned table into a union of scans over only those partitions whose partitioning predicate is consistent with the query's filter, so unrelated partitions are eliminated before any I/O. In the plan tree this appears as a partition iterator or append node above the surviving partition scans, and the optimizer uses partition metadata and constant filters to decide which children to keep."
+    keywords: ["partition pruning", "append", "partitioned table", "filter", "metadata", "scan"]
+    similarity_threshold: 0.65
+
+  - id: "snapshot_isolation_rules"
+    category: "structure_aware"
+    question: "Describe the structural rules of snapshot isolation and how it differs from serializable."
+    expected_answer: "Under snapshot isolation, each transaction reads from a consistent snapshot of the database taken at its start and commits only if no concurrent transaction has written the same data item it has written, otherwise it aborts. This first-committer-wins rule prevents lost updates and dirty reads but allows write-skew anomalies because two transactions can read the same snapshot, modify disjoint items, and both commit even though no serial order would have admitted both, which is why serializable snapshot isolation adds extra checks on read-write conflict cycles."
+    keywords: ["snapshot isolation", "first committer wins", "write skew", "serializable snapshot isolation", "consistent snapshot"]
+    similarity_threshold: 0.7
+
+  - id: "wal_buffer_pool_interaction"
+    category: "structure_aware"
+    question: "Show structurally how the buffer pool and write-ahead log interact during an update."
+    expected_answer: "When a transaction updates a record, the buffer manager pins the page in the pool and the recovery manager appends a log record describing the change to the in-memory log buffer. Before the dirty page can be flushed to disk, all log records up to and including its update LSN must be flushed first, enforcing the write-ahead invariant. On commit, the commit log record is forced to stable storage, after which the dirty pages can be written back lazily under control of the buffer manager's replacement policy."
+    keywords: ["buffer pool", "write-ahead log", "LSN", "force", "no-steal", "steal", "no-force"]
+    similarity_threshold: 0.7
+
+  - id: "two_pl_phases_diagram"
+    category: "structure_aware"
+    question: "Describe the lock-count shape of a transaction under basic two-phase locking."
+    expected_answer: "Plotted over time, the number of locks held by a basic 2PL transaction rises monotonically during its growing phase as new locks are acquired, reaches a single maximum called the lock point, and then falls monotonically during its shrinking phase as locks are released, with no acquisitions allowed after the lock point. This single peak is the structural signature that distinguishes 2PL from non-two-phase schedules and is what guarantees conflict serializability."
+    keywords: ["growing phase", "shrinking phase", "lock point", "monotone", "two-phase locking"]
+    similarity_threshold: 0.7

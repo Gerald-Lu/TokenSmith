@@ -2,6 +2,7 @@ import json
 import numpy as np
 from pathlib import Path
 from typing import List, Dict, Any
+from collections import defaultdict
 
 def generate_summary_report(results_dir: Path):
     """Generate HTML summary report from JSON results."""
@@ -155,6 +156,20 @@ def _generate_summary_stats(results: List[Dict[Any, Any]], active_metrics: set) 
         metric_key = f"{metric}_similarity"
         metric_scores = [r['scores'].get(metric_key, 0) for r in results]
         metric_averages[metric] = np.mean(metric_scores) if metric_scores else 0
+
+    context_metrics = [
+        ("approx_prompt_tokens", "Approx Prompt Tokens"),
+        ("context_chars", "Context Chars"),
+        ("n_unique_parents", "Unique Parents"),
+        ("parent_dedup_ratio", "Parent Dedup Ratio"),
+    ]
+    context_avgs = {}
+    for key, _label in context_metrics:
+        vals = [r.get(key, 0) for r in results if r.get(key) is not None]
+        context_avgs[key] = float(np.mean(vals)) if vals else 0.0
+    by_cat = defaultdict(list)
+    for r in results:
+        by_cat[r.get("category") or "uncategorized"].append(r)
     
     html = f"""
     <div class="summary">
@@ -172,8 +187,54 @@ def _generate_summary_stats(results: List[Dict[Any, Any]], active_metrics: set) 
     
     for metric, avg in sorted(metric_averages.items()):
         html += f'<div class="metric-item"><strong>{metric.title()}:</strong> {avg:.3f}</div>'
-    
-    html += "</div></div>"
+    html += "</div>"
+    html += """
+        <h3>Context Metrics (All Tests)</h3>
+        <div class="metric-grid">
+    """
+    for key, label in context_metrics:
+        val = context_avgs[key]
+        fmt = f"{val:.3f}" if key == "parent_dedup_ratio" else f"{val:.1f}"
+        html += f'<div class="metric-item"><strong>{label}:</strong> {fmt}</div>'
+    html += "</div>"
+    if by_cat:
+        html += """
+        <h3>Context Metrics by Category</h3>
+        <table style="width:100%; border-collapse: collapse; margin-top: 8px;">
+            <thead>
+                <tr>
+                    <th style="text-align:left; border-bottom:1px solid #ccc; padding:6px;">Category</th>
+                    <th style="text-align:right; border-bottom:1px solid #ccc; padding:6px;">N</th>
+                    <th style="text-align:right; border-bottom:1px solid #ccc; padding:6px;">Approx Prompt Tokens</th>
+                    <th style="text-align:right; border-bottom:1px solid #ccc; padding:6px;">Context Chars</th>
+                    <th style="text-align:right; border-bottom:1px solid #ccc; padding:6px;">Unique Parents</th>
+                    <th style="text-align:right; border-bottom:1px solid #ccc; padding:6px;">Parent Dedup Ratio</th>
+                </tr>
+            </thead>
+            <tbody>
+        """
+        for cat in sorted(by_cat):
+            rows = by_cat[cat]
+            n = len(rows)
+            tok = np.mean([r.get("approx_prompt_tokens", 0) for r in rows]) if n else 0
+            ch = np.mean([r.get("context_chars", 0) for r in rows]) if n else 0
+            up = np.mean([r.get("n_unique_parents", 0) for r in rows]) if n else 0
+            dd = np.mean([r.get("parent_dedup_ratio", 0) for r in rows]) if n else 0
+            html += f"""
+                <tr>
+                    <td style="padding:6px; border-bottom:1px solid #eee;">{cat}</td>
+                    <td style="padding:6px; border-bottom:1px solid #eee; text-align:right;">{n}</td>
+                    <td style="padding:6px; border-bottom:1px solid #eee; text-align:right;">{tok:.1f}</td>
+                    <td style="padding:6px; border-bottom:1px solid #eee; text-align:right;">{ch:.1f}</td>
+                    <td style="padding:6px; border-bottom:1px solid #eee; text-align:right;">{up:.2f}</td>
+                    <td style="padding:6px; border-bottom:1px solid #eee; text-align:right;">{dd:.3f}</td>
+                </tr>
+            """
+        html += """
+            </tbody>
+        </table>
+        """
+    html += "</div>"
     return html
 
 def _convert_markdown_to_html(text: str) -> str:
