@@ -1,5 +1,6 @@
 import json
 import pytest
+from collections import defaultdict
 from pathlib import Path
 from datetime import datetime
 from tests.metrics import SimilarityScorer
@@ -24,18 +25,18 @@ def test_tokensmith_benchmarks(benchmarks, config, results_dir):
     # Run each benchmark
     passed = 0
     failed = 0
-    
+    all_results = []
     for benchmark in benchmarks:
         result = run_benchmark(benchmark, config, results_dir, scorer)
-        if result["passed"]:
+        all_results.append(result)
+        if result.get("passed"):
             passed += 1
         else:
             failed += 1
-    
-    # Print summary
     print(f"\n{'='*60}")
     print(f"  SUMMARY: {passed} passed, {failed} failed")
-    print(f"{'='*60}\n")
+    print(f"{'='*60}")
+    _print_category_summary(all_results)
 
 
 def print_test_config(config, scorer):
@@ -77,8 +78,6 @@ def run_benchmark(benchmark, config, results_dir, scorer):
     threshold = config["threshold_override"] or benchmark["similarity_threshold"] or 0.6 
     golden_chunks = benchmark.get("golden_chunks", None)
     ideal_retrieved_chunks = benchmark.get("ideal_retrieved_chunks", None)
-    gold_pages = benchmark.get("gold_pages", None)
-    category = benchmark.get("category", None)
 
     # Print header
     print(f"\n{'─'*60}")
@@ -89,7 +88,7 @@ def run_benchmark(benchmark, config, results_dir, scorer):
     
     # Get answer from TokenSmith
     try:
-        retrieved_answer, chunks_info, hyde_query, artifacts = get_tokensmith_answer(
+        retrieved_answer, chunks_info, hyde_query = get_tokensmith_answer(
             question=question,
             config=config,
             golden_chunks=golden_chunks if config["use_golden_chunks"] else None
@@ -113,43 +112,31 @@ def run_benchmark(benchmark, config, results_dir, scorer):
     
     # Calculate scores
     try:
-        scores = scorer.calculate_scores(
-            retrieved_answer,
-            expected_answer,
-            keywords,
-            question=question,
-            ideal_retrieved_chunks=ideal_retrieved_chunks,
-            actual_retrieved_chunks=chunks_info,
-            gold_pages=gold_pages,
-            metadata=artifacts.get("metadata") if artifacts else None,
-            chunks=artifacts.get("chunks") if artifacts else None,
-            parent_map=artifacts.get("parent_map") if artifacts else None,
-        )
+        scores = scorer.calculate_scores(retrieved_answer, expected_answer, keywords, question=question, ideal_retrieved_chunks=ideal_retrieved_chunks, actual_retrieved_chunks=chunks_info)
     except Exception as e:
         error_msg = f"Scoring error: {e}"
         print(f"  ❌ FAILED: {error_msg}")
         log_failure(results_dir, benchmark_id, error_msg)
         return {"passed": False}
     
-    # Check if test passed
     final_score = scores.get("final_score", 0)
     passed = final_score >= threshold
-    
-    # Print result
+    payload_stats = _payload_stats(chunks_info)
     print_result(benchmark_id, passed, final_score, threshold, scores, config["output_mode"], retrieved_answer)
-    
-    # Save detailed result
     result_data = {
         "test_id": benchmark_id,
-        "category": category,
+        "category": benchmark.get("category"),
         "question": question,
         "expected_answer": expected_answer,
         "retrieved_answer": retrieved_answer,
         "keywords": keywords,
         "threshold": threshold,
-        "gold_pages": gold_pages,
         "scores": scores,
         "passed": passed,
+        "approx_prompt_tokens": payload_stats["approx_prompt_tokens"],
+        "context_chars": payload_stats["context_chars"],
+        "n_unique_parents": payload_stats["n_unique_parents"],
+        "parent_dedup_ratio": payload_stats["parent_dedup_ratio"],
         "active_metrics": scores.get("active_metrics", []),
         "metric_weights": get_metric_weights(scorer, scores.get("active_metrics", [])),
         "chunks_info": chunks_info if chunks_info else [],
@@ -240,10 +227,19 @@ def get_tokensmith_answer(question, config, golden_chunks=None):
 
     # Run the query through the main pipeline
     artifacts_dir = cfg.get_artifacts_directory()
-    faiss_index, bm25_index, chunks, sources, metadata = load_artifacts(
-        artifacts_dir=artifacts_dir, 
+    loaded_artifacts = load_artifacts(
+        artifacts_dir=artifacts_dir,
         index_prefix=config["index_prefix"]
     )
+    if len(loaded_artifacts) == 6:
+        faiss_index, bm25_index, chunks, sources, metadata, parent_map = loaded_artifacts
+    elif len(loaded_artifacts) == 5:
+        faiss_index, bm25_index, chunks, sources, metadata = loaded_artifacts
+        parent_map = {}
+    else:
+        raise ValueError(
+            f"Unexpected artifacts tuple length: {len(loaded_artifacts)}"
+        )
 
     retrievers = [
         FAISSRetriever(faiss_index, cfg.embed_model),
@@ -269,6 +265,7 @@ def get_tokensmith_answer(question, config, golden_chunks=None):
         "retrievers": retrievers,
         "ranker": ranker,
         "metadata": metadata,
+        "parent_map": parent_map,
     }
 
     result = get_answer(
@@ -291,7 +288,7 @@ def get_tokensmith_answer(question, config, golden_chunks=None):
     # Clean answer - extract up to end token if present
     generated = clean_answer(generated)
     
-    return generated, chunks_info, hyde_query, artifacts
+    return generated, chunks_info, hyde_query
 
 
 def clean_answer(text):
@@ -415,3 +412,41 @@ def format_failure_message(question, expected, retrieved, final_score, threshold
         lines.append(f"  keywords: {keywords_matched}/{total_keywords}")
     
     return "\n".join(lines)
+
+def _payload_stats(chunks_info):
+    if not chunks_info:
+        return {"approx_prompt_tokens": 0, "context_chars": 0, "n_unique_parents": 0, "parent_dedup_ratio": 0.0}
+    contents = []
+    for c in chunks_info:
+        v = c.get("content", "") if isinstance(c, dict) else ""
+        if isinstance(v, tuple):
+            v = v[0] if v else ""
+        elif isinstance(v, list):
+            v = " ".join(str(x) for x in v)
+        elif not isinstance(v, str):
+            v = str(v)
+        contents.append(v or "")
+    total_chars = sum(len(x) for x in contents)
+    approx_tokens = total_chars // 4
+    uniq = len({c.strip() for c in contents if c.strip()})
+    ratio = uniq / max(len(contents), 1)
+    return {"approx_prompt_tokens": approx_tokens, "context_chars": total_chars, "n_unique_parents": uniq, "parent_dedup_ratio": round(ratio, 3)}
+
+def _print_category_summary(results):
+    by_cat = defaultdict(list)
+    for r in results:
+        by_cat[(r.get("category") or "uncategorized")].append(r)
+    if not by_cat:
+        return
+    print(f"{'='*60}")
+    print(f"  PER-CATEGORY METRICS")
+    print(f"{'='*60}")
+    print(f"  {'category':<20}{'n':>4}  {'pass%':>6}  {'score':>6}  {'tok':>6}  {'dedup':>6}")
+    for cat, rows in sorted(by_cat.items()):
+        n = len(rows)
+        pass_rate = 100.0 * sum(1 for r in rows if r.get("passed")) / max(n, 1)
+        avg_score = sum(r.get("scores", {}).get("final_score", 0) for r in rows) / max(n, 1)
+        avg_tok = sum(r.get("approx_prompt_tokens", 0) for r in rows) / max(n, 1)
+        avg_dedup = sum(r.get("parent_dedup_ratio", 0) for r in rows) / max(n, 1)
+        print(f"  {cat:<20}{n:>4}  {pass_rate:>5.1f}%  {avg_score:>6.3f}  {avg_tok:>6.0f}  {avg_dedup:>6.2f}")
+    print(f"{'='*60}\n")
