@@ -107,6 +107,11 @@ def pytest_addoption(parser):
         help="Comma-separated list of benchmark IDs to run (e.g., 'transactions,er_modeling')"
     )
     group.addoption(
+        "--benchmarks-file",
+        default=None,
+        help="Path to benchmark YAML (default: tests/benchmarks.yaml)"
+    )
+    group.addoption(
         "--metrics",
         action="append",
         dest="metrics_list",
@@ -205,7 +210,13 @@ def benchmarks(pytestconfig, config):
     
     Optionally filters by benchmark IDs if specified.
     """
-    benchmark_file = Path(__file__).parent / "benchmarks.yaml"
+    cli_file = pytestconfig.getoption("--benchmarks-file")
+    if cli_file:
+        benchmark_file = Path(cli_file)
+        if not benchmark_file.is_absolute():
+            benchmark_file = Path.cwd() / benchmark_file
+    else:
+        benchmark_file = Path(__file__).parent / "benchmarks.yaml"
     with open(benchmark_file) as f:
         data = yaml.safe_load(f)
     

@@ -25,7 +25,7 @@ class SimilarityScorer:
         
         return active
     
-    def calculate_scores(self, answer: str, expected: str, keywords: Optional[List[str]] = None, question: Optional[str] = None, ideal_retrieved_chunks: Optional[List[int]] = None, actual_retrieved_chunks: Optional[List[int]] = None) -> Dict[str, Any]:
+    def calculate_scores(self, answer: str, expected: str, keywords: Optional[List[str]] = None, question: Optional[str] = None, ideal_retrieved_chunks: Optional[List[int]] = None, actual_retrieved_chunks: Optional[List[int]] = None, gold_pages: Optional[List[int]] = None, metadata: Optional[List[dict]] = None, chunks: Optional[List[str]] = None, parent_map: Optional[dict] = None) -> Dict[str, Any]:
         """Calculate scores using active metrics."""
         active_metrics = self._get_active_metrics()
         
@@ -41,7 +41,15 @@ class SimilarityScorer:
             if name in ("llm_judge", "async_llm_judge") and question:
                 score = metric.calculate(answer, question, keywords)
             elif name == "chunk_retrieval":
+                if ideal_retrieved_chunks is None or actual_retrieved_chunks is None:
+                    continue
                 score = metric.calculate(ideal_retrieved_chunks, actual_retrieved_chunks)
+            elif name == "page_recall":
+                if gold_pages is None or metadata is None:
+                    continue
+                score = metric.calculate(gold_pages, actual_retrieved_chunks, metadata=metadata, chunks=chunks, parent_map=parent_map)
+            elif name == "faithfulness":
+                score = metric.calculate(answer, actual_retrieved_chunks, keywords)
             else:
                 score = metric.calculate(answer, expected, keywords)
             scores[f"{name}_similarity"] = score

@@ -7,6 +7,8 @@ from tests.metrics.nli import NLIEntailmentMetric
 from tests.metrics.llm_judge import LLMJudgeMetric
 from tests.metrics.async_llm_judge import AsyncLLMJudgeMetric
 from tests.metrics.chunk_retrieval import ChunkRetrievalMetric
+from tests.metrics.page_recall import PageRecallMetric
+from tests.metrics.faithfulness import FaithfulnessMetric
 
 __all__ = [
     'MetricBase',
@@ -18,4 +20,6 @@ __all__ = [
     'LLMJudgeMetric',
     'AsyncLLMJudgeMetric',
     'ChunkRetrievalMetric',
+    'PageRecallMetric',
+    'FaithfulnessMetric',
 ]

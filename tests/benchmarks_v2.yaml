@@ -1,0 +1,240 @@
+benchmarks:
+  - id: "acid_properties"
+    category: "factual"
+    question: "What are the ACID properties of transactions?"
+    expected_answer: "Atomicity makes a transaction all-or-nothing, consistency requires each transaction to preserve database integrity, isolation makes concurrent execution equivalent to some serial order, and durability guarantees that committed effects persist across crashes."
+    keywords: ["atomicity", "consistency", "isolation", "durability"]
+    similarity_threshold: 0.78
+    gold_pages: [1232, 1233, 1234, 1235]
+
+  - id: "functional_dependency"
+    category: "factual"
+    question: "What is a functional dependency?"
+    expected_answer: "A functional dependency X -> Y holds on a relation R if every pair of tuples that agree on X also agree on Y."
+    keywords: ["functional dependency", "agree", "tuples", "X implies Y", "constraint"]
+    similarity_threshold: 0.72
+    gold_pages: [479, 480, 481, 482, 483, 484, 485]
+
+  - id: "primary_foreign_keys"
+    category: "factual"
+    question: "Explain primary keys and foreign keys."
+    expected_answer: "A primary key is a chosen candidate key whose attributes uniquely identify each tuple of a relation; a foreign key is a set of attributes in one relation that must match the primary key of a referenced relation, expressing referential integrity."
+    keywords: ["primary key", "foreign key", "candidate key", "referential integrity", "uniquely identify"]
+    similarity_threshold: 0.72
+    gold_pages: [113, 114, 115, 145, 146]
+
+  - id: "database_schema"
+    category: "factual"
+    question: "What is a database schema, and how does it differ from a database instance?"
+    expected_answer: "A database schema is the logical design of the database -- the relations, attributes, types, and constraints. A database instance is the actual data stored at a point in time; the schema is stable, instances change."
+    keywords: ["schema", "instance", "logical design", "relations", "attributes", "constraints"]
+    similarity_threshold: 0.70
+    gold_pages: [50, 59, 60, 63, 64, 65, 71, 72]
+
+  - id: "bptree_basics"
+    category: "factual"
+    question: "How does a B+-tree index organize keys, and why is it preferred over binary trees for disk-based access?"
+    expected_answer: "A B+-tree stores keys in nodes sized to a disk page, giving very high fan-out and a shallow, height-balanced tree, so search/insert/delete each take only a few page I/Os."
+    keywords: ["fan-out", "balanced", "leaf", "page I/O", "shallow", "B+-tree"]
+    similarity_threshold: 0.74
+    gold_pages: [1006, 1007, 1008, 1036, 1037, 1038]
+
+  - id: "lossy_decomposition"
+    category: "factual"
+    question: "What is a lossy decomposition?"
+    expected_answer: "A decomposition of a relation R into R1 and R2 is lossy if joining R1 with R2 introduces spurious tuples not in R; this happens when R1 intersect R2 is not a superkey of either, violating the lossless-join condition."
+    keywords: ["lossy decomposition", "spurious tuples", "lossless join", "superkey", "natural join"]
+    similarity_threshold: 0.72
+    gold_pages: [476, 477, 478, 479, 480]
+
+  - id: "sql_isolation_levels"
+    category: "factual"
+    question: "What isolation levels does the SQL standard define, and which is the default?"
+    expected_answer: "SQL defines read uncommitted, read committed, repeatable read, and serializable. The default is serializable, which is equivalent to some serial order of the concurrent transactions."
+    keywords: ["serializable", "read committed", "repeatable read", "read uncommitted", "default", "isolation"]
+    similarity_threshold: 0.70
+    gold_pages: [1252, 1253, 1254, 1255, 1256]
+
+  - id: "checkpoint_purpose"
+    category: "factual"
+    question: "What is the purpose of a checkpoint in database recovery?"
+    expected_answer: "A checkpoint forces dirty buffers and log records to stable storage and writes a checkpoint record, so that on restart the recovery manager only has to scan the log from the last checkpoint forward instead of from the beginning of time."
+    keywords: ["checkpoint", "log", "stable storage", "recovery", "dirty pages", "scan"]
+    similarity_threshold: 0.72
+    gold_pages: [1423, 1424, 1425, 1426, 1427, 1428]
+
+  - id: "sql_view"
+    category: "factual"
+    question: "What is a SQL view, and what is it commonly used for?"
+    expected_answer: "A SQL view is a named query whose result is treated as a virtual relation; views are used to hide schema details, support access control, simplify complex queries, and provide a stable interface even when the underlying tables change."
+    keywords: ["view", "virtual relation", "CREATE VIEW", "query", "access control", "abstraction"]
+    similarity_threshold: 0.70
+    gold_pages: [232, 233, 234, 236, 238]
+
+  - id: "trigger_definition"
+    category: "factual"
+    question: "What is a trigger in SQL?"
+    expected_answer: "A trigger is a procedural action that the database system automatically executes when a specified event (insert, update, or delete) occurs on a given table, optionally constrained by a WHEN condition."
+    keywords: ["trigger", "BEFORE", "AFTER", "INSERT", "UPDATE", "DELETE", "WHEN", "automatic"]
+    similarity_threshold: 0.70
+    gold_pages: [325, 329, 330, 331, 332]
+
+  - id: "wal_atomicity_and_durability"
+    category: "multi_part"
+    question: "How does write-ahead logging support both atomicity and durability?"
+    expected_answer: "Atomicity: log records contain old values, so an aborted or crashed transaction can be undone by replaying the log in reverse. Durability: log records are forced to stable storage before commit, so committed effects can be redone on restart even if the in-memory pages were lost."
+    keywords: ["write-ahead", "log", "undo", "redo", "stable storage", "atomicity", "durability", "commit"]
+    similarity_threshold: 0.72
+    gold_pages: [1395, 1396, 1397, 1398, 1399, 1400, 1410, 1411]
+
+  - id: "two_phase_locking_tradeoffs"
+    category: "multi_part"
+    question: "What does two-phase locking guarantee, and what are its main drawbacks?"
+    expected_answer: "Two-phase locking has a growing phase where locks are acquired and a shrinking phase where locks are released; this guarantees conflict-serializable schedules. Drawbacks: it can produce deadlocks, can cascade aborts unless the strict variant is used, and reduces concurrency by holding locks longer than strictly necessary."
+    keywords: ["two-phase locking", "growing phase", "shrinking phase", "serializable", "deadlock", "cascading", "strict 2PL"]
+    similarity_threshold: 0.72
+    gold_pages: [1295, 1296, 1297, 1298, 1299, 1300, 1305]
+
+  - id: "checkpoint_tradeoff"
+    category: "multi_part"
+    question: "How do checkpoints reduce recovery time, and what cost do they impose during normal operation?"
+    expected_answer: "Checkpoints bound the portion of the log that must be replayed on restart, so recovery time becomes a function of the work done since the last checkpoint instead of the whole log. The cost is added I/O and a brief pause to flush dirty pages and write the checkpoint record during normal operation."
+    keywords: ["checkpoint", "recovery time", "log", "flush", "dirty pages", "I/O", "tradeoff"]
+    similarity_threshold: 0.70
+    gold_pages: [1423, 1424, 1425, 1426, 1427, 1428, 1429, 1430]
+
+  - id: "oltp_vs_analytics"
+    category: "multi_part"
+    question: "Contrast the goals of OLTP and analytics workloads."
+    expected_answer: "OLTP workloads consist of many small concurrent transactions that read and update a few rows each, requiring high throughput, low latency, and tight consistency. Analytics workloads run fewer, much larger read-mostly queries that scan and aggregate big portions of the data; they tolerate higher latency and often run on denormalized warehouse schemas."
+    keywords: ["OLTP", "analytics", "throughput", "latency", "warehouse", "scan", "aggregate", "denormalized"]
+    similarity_threshold: 0.70
+    gold_pages: [800, 801, 802, 1921, 1922, 1923, 1924]
+
+  - id: "star_schema_purpose"
+    category: "multi_part"
+    question: "What is a star schema, and why is it preferred for analytics workloads?"
+    expected_answer: "A star schema centers on a fact table that stores measures and foreign keys to surrounding dimension tables. It is preferred for analytics because aggregating measures by dimension attributes maps to simple, well-optimized join-and-group-by queries on a shape the optimizer handles well."
+    keywords: ["star schema", "fact table", "dimension table", "measures", "join", "group by", "warehouse"]
+    similarity_threshold: 0.70
+    gold_pages: [800, 801, 802, 803, 804, 805]
+
+  - id: "fd_to_bcnf"
+    category: "multi_part"
+    question: "How are functional dependencies used to test for and decompose a schema into BCNF?"
+    expected_answer: "A relation R is in BCNF if for every non-trivial functional dependency X -> Y that holds on R, X is a superkey. To decompose, find an offending dependency X -> Y, split R into (X union Y) and (R - Y) plus X, and repeat on each piece until all relations satisfy the BCNF condition."
+    keywords: ["functional dependency", "BCNF", "superkey", "decomposition", "non-trivial", "lossless"]
+    similarity_threshold: 0.70
+    gold_pages: [487, 488, 489, 490, 491, 492, 493, 494, 495]
+
+  - id: "view_problems_and_limits"
+    category: "multi_part"
+    question: "What problems do SQL views solve, and what are their main limitations?"
+    expected_answer: "Views solve abstraction, security, and reuse: they hide schema details, restrict access to specific rows or columns, and let multiple queries share a definition. Limitations: many views are not updatable (especially those with aggregates, joins, DISTINCT, or unions), and naive recomputation per query can be expensive without materialization."
+    keywords: ["view", "abstraction", "security", "updatable", "materialized", "limitation"]
+    similarity_threshold: 0.70
+    gold_pages: [232, 233, 234, 236, 238]
+
+  - id: "hashing_vs_btree"
+    category: "multi_part"
+    question: "When is hash indexing preferable to a B+-tree index, and when is it not?"
+    expected_answer: "Hash indexes give near-constant-time lookup and are preferable when the workload is dominated by equality lookups on the indexed key. B+-trees are preferred when the workload includes range queries, ordered scans, or partial-key (prefix) lookups, since hash indexes do not preserve order and do not support those efficiently."
+    keywords: ["hash index", "B+-tree", "equality", "range query", "ordered", "lookup", "fan-out"]
+    similarity_threshold: 0.70
+    gold_pages: [1006, 1012, 1014, 1015, 1095, 1096, 1097, 1098]
+
+  - id: "recoverable_cascadeless"
+    category: "multi_part"
+    question: "What are recoverable and cascadeless schedules, and how do they differ?"
+    expected_answer: "A schedule is recoverable if every transaction commits only after all transactions whose data it read have committed. It is cascadeless if no transaction reads data written by an uncommitted transaction. Cascadeless implies recoverable; the converse does not hold."
+    keywords: ["recoverable", "cascadeless", "schedule", "commit", "uncommitted", "cascade rollback"]
+    similarity_threshold: 0.70
+    gold_pages: [1255, 1256, 1257, 1258, 1259, 1260]
+
+  - id: "trigger_use_cases"
+    category: "multi_part"
+    question: "When is a SQL trigger appropriate, and when should you avoid using one?"
+    expected_answer: "Triggers are appropriate for enforcing complex integrity constraints, maintaining derived data, and producing audit trails -- things that must fire regardless of the application path. They should be avoided for ordinary application logic, because triggers are invisible at the call site, hard to test, and can chain in surprising ways."
+    keywords: ["trigger", "integrity", "audit", "derived", "side effect", "avoid", "application logic"]
+    similarity_threshold: 0.68
+    gold_pages: [325, 329, 330, 331, 332, 333, 334, 335]
+
+  - id: "relational_vs_hierarchical_network"
+    category: "structure_aware"
+    question: "Compare the relational data model with the older hierarchical and network data models."
+    expected_answer: "The hierarchical and network models expose physical pointer structures and force the application to navigate records explicitly. The relational model exposes only sets of tuples; queries are declarative, expressed over relations rather than navigation paths, which gives data independence and lets the optimizer choose the access path."
+    keywords: ["relational model", "hierarchical model", "network model", "navigation", "data independence", "declarative"]
+    similarity_threshold: 0.65
+    gold_pages: [33, 34, 35, 36, 37]
+
+  - id: "denormalization_when"
+    category: "structure_aware"
+    question: "Under what circumstances would you intentionally denormalize a schema?"
+    expected_answer: "Denormalization is justified when read-heavy workloads dominate and the cost of repeated joins outweighs the cost of duplicated data and update anomalies -- typical examples are reporting and analytics pipelines, materialized aggregates, and warehouse star schemas."
+    keywords: ["denormalization", "read-heavy", "join cost", "update anomaly", "warehouse", "materialized"]
+    similarity_threshold: 0.68
+    gold_pages: [532, 536, 800, 801, 802, 1909]
+
+  - id: "two_phase_commit_failures"
+    category: "structure_aware"
+    question: "How does the two-phase commit protocol handle the loss of the coordinator?"
+    expected_answer: "If the coordinator fails after sending PREPARE but before announcing the decision, participants are blocked: they cannot unilaterally commit or abort. They must either wait for the coordinator to recover and replay its log, or run a termination protocol with the surviving participants to decide based on observed votes."
+    keywords: ["two-phase commit", "2PC", "coordinator", "blocking", "PREPARE", "termination", "vote"]
+    similarity_threshold: 0.68
+    gold_pages: [1573, 1574, 1575, 1579, 1595]
+
+  - id: "parallelism_in_query_eval"
+    category: "structure_aware"
+    question: "What forms of parallelism are exploited in parallel query evaluation?"
+    expected_answer: "Inter-query parallelism runs different queries on different processors. Inter-operator parallelism runs different operators of one query plan on different processors, including pipelined parallelism between producer and consumer. Intra-operator (data) parallelism partitions one operator's input across processors so the same operator runs on each partition."
+    keywords: ["inter-query", "inter-operator", "intra-operator", "pipelined", "data parallelism", "partition"]
+    similarity_threshold: 0.65
+    gold_pages: [1599, 1600, 1601, 1602, 1605, 1610, 1620]
+
+  - id: "partitioning_strategies"
+    category: "structure_aware"
+    question: "Compare horizontal range partitioning, hash partitioning, and round-robin partitioning."
+    expected_answer: "Range partitioning splits tuples by an attribute interval; range queries are efficient but skew is easy. Hash partitioning splits by a hash of an attribute; load is more even but range queries must scan all partitions. Round-robin assigns tuples in turn; it gives the most even load for full scans but supports neither equality nor range lookups efficiently."
+    keywords: ["range partitioning", "hash partitioning", "round-robin", "skew", "load balancing", "scan"]
+    similarity_threshold: 0.65
+    gold_pages: [1542, 1543, 1544, 1545, 1546, 1547, 1548]
+
+  - id: "blockchain_vs_traditional_db"
+    category: "structure_aware"
+    question: "How does a blockchain database differ from a traditional ACID database?"
+    expected_answer: "A blockchain database keeps an append-only, cryptographically chained log of transactions and replicates it across mutually distrusting parties; consensus replaces a single coordinator. A traditional ACID database trusts a central server, supports in-place updates, and uses ACID protocols inside that trust boundary rather than across one."
+    keywords: ["blockchain", "append-only", "hash chain", "consensus", "trust", "decentralized", "ACID"]
+    similarity_threshold: 0.65
+    gold_pages: [1955, 1960, 1965, 1970, 1980]
+
+  - id: "logical_vs_physical_design"
+    category: "structure_aware"
+    question: "Distinguish logical schema design from physical schema design."
+    expected_answer: "Logical design fixes which relations exist and what their attributes, keys, and constraints are -- the model the application sees. Physical design picks how those relations are stored and accessed: file organization, indexes, partitioning, and storage layout, all chosen to satisfy a performance budget."
+    keywords: ["logical design", "physical design", "schema", "indexes", "file organization", "performance", "data independence"]
+    similarity_threshold: 0.65
+    gold_pages: [50, 51, 52, 60, 61, 62, 63]
+
+  - id: "phantom_phenomenon"
+    category: "structure_aware"
+    question: "What is the phantom phenomenon, and what techniques prevent it?"
+    expected_answer: "The phantom phenomenon occurs when a transaction T1 reads a set of tuples satisfying a predicate, while T2 inserts a new tuple satisfying that predicate; without extra mechanisms, T1's read is not equivalent to any serial order. Predicate locking, index-range locking, and next-key locking prevent it by locking the predicate's coverage rather than only the existing rows."
+    keywords: ["phantom", "predicate locking", "index-range locking", "next-key", "serializable", "insert"]
+    similarity_threshold: 0.65
+    gold_pages: [1300, 1301, 1302, 1320, 1321]
+
+  - id: "book_authors"
+    category: "structure_aware"
+    question: "Who are the authors of this textbook?"
+    expected_answer: "Database System Concepts, Seventh Edition is by Abraham Silberschatz, Henry F. Korth, and S. Sudarshan."
+    keywords: ["Silberschatz", "Korth", "Sudarshan", "Database System Concepts"]
+    similarity_threshold: 0.55
+    gold_pages: [1, 2, 3, 4, 5]
+
+  - id: "textbook_coverage"
+    category: "structure_aware"
+    question: "What broad categories of topics does this textbook cover?"
+    expected_answer: "The book covers the relational model and SQL, database design and normalization, application design, big data and analytics, storage and indexing, query processing and optimization, transactions and concurrency control, recovery, parallel and distributed databases, and advanced topics including blockchain."
+    keywords: ["relational", "SQL", "design", "indexing", "query", "transactions", "concurrency", "recovery", "parallel", "distributed"]
+    similarity_threshold: 0.55
+    gold_pages: [1, 2, 3, 4, 5, 6]

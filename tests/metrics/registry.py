@@ -16,7 +16,9 @@ class MetricRegistry:
             KeywordMatchMetric,
             NLIEntailmentMetric,
             AsyncLLMJudgeMetric,
-            ChunkRetrievalMetric
+            ChunkRetrievalMetric,
+            PageRecallMetric,
+            FaithfulnessMetric,
         )
 
         self.register(SemanticSimilarityMetric())
@@ -24,6 +26,8 @@ class MetricRegistry:
         self.register(NLIEntailmentMetric())
         # self.register(AsyncLLMJudgeMetric())
         self.register(ChunkRetrievalMetric())
+        self.register(PageRecallMetric())
+        self.register(FaithfulnessMetric())
 
     def register(self, metric: MetricBase):
         """Register a new metric."""

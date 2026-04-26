@@ -77,6 +77,8 @@ def run_benchmark(benchmark, config, results_dir, scorer):
     threshold = config["threshold_override"] or benchmark["similarity_threshold"] or 0.6 
     golden_chunks = benchmark.get("golden_chunks", None)
     ideal_retrieved_chunks = benchmark.get("ideal_retrieved_chunks", None)
+    gold_pages = benchmark.get("gold_pages", None)
+    category = benchmark.get("category", None)
 
     # Print header
     print(f"\n{'─'*60}")
@@ -87,7 +89,7 @@ def run_benchmark(benchmark, config, results_dir, scorer):
     
     # Get answer from TokenSmith
     try:
-        retrieved_answer, chunks_info, hyde_query = get_tokensmith_answer(
+        retrieved_answer, chunks_info, hyde_query, artifacts = get_tokensmith_answer(
             question=question,
             config=config,
             golden_chunks=golden_chunks if config["use_golden_chunks"] else None
@@ -111,7 +113,18 @@ def run_benchmark(benchmark, config, results_dir, scorer):
     
     # Calculate scores
     try:
-        scores = scorer.calculate_scores(retrieved_answer, expected_answer, keywords, question=question, ideal_retrieved_chunks=ideal_retrieved_chunks, actual_retrieved_chunks=chunks_info)
+        scores = scorer.calculate_scores(
+            retrieved_answer,
+            expected_answer,
+            keywords,
+            question=question,
+            ideal_retrieved_chunks=ideal_retrieved_chunks,
+            actual_retrieved_chunks=chunks_info,
+            gold_pages=gold_pages,
+            metadata=artifacts.get("metadata") if artifacts else None,
+            chunks=artifacts.get("chunks") if artifacts else None,
+            parent_map=artifacts.get("parent_map") if artifacts else None,
+        )
     except Exception as e:
         error_msg = f"Scoring error: {e}"
         print(f"  ❌ FAILED: {error_msg}")
@@ -128,11 +141,13 @@ def run_benchmark(benchmark, config, results_dir, scorer):
     # Save detailed result
     result_data = {
         "test_id": benchmark_id,
+        "category": category,
         "question": question,
         "expected_answer": expected_answer,
         "retrieved_answer": retrieved_answer,
         "keywords": keywords,
         "threshold": threshold,
+        "gold_pages": gold_pages,
         "scores": scores,
         "passed": passed,
         "active_metrics": scores.get("active_metrics", []),
@@ -276,7 +291,7 @@ def get_tokensmith_answer(question, config, golden_chunks=None):
     # Clean answer - extract up to end token if present
     generated = clean_answer(generated)
     
-    return generated, chunks_info, hyde_query
+    return generated, chunks_info, hyde_query, artifacts
 
 
 def clean_answer(text):
