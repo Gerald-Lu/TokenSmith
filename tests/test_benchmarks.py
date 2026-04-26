@@ -1,5 +1,6 @@
 import json
 import pytest
+from collections import defaultdict
 from pathlib import Path
 from datetime import datetime
 from tests.metrics import SimilarityScorer
@@ -24,18 +25,18 @@ def test_tokensmith_benchmarks(benchmarks, config, results_dir):
     # Run each benchmark
     passed = 0
     failed = 0
-    
+    all_results = []
     for benchmark in benchmarks:
         result = run_benchmark(benchmark, config, results_dir, scorer)
-        if result["passed"]:
+        all_results.append(result)
+        if result.get("passed"):
             passed += 1
         else:
             failed += 1
-    
-    # Print summary
     print(f"\n{'='*60}")
     print(f"  SUMMARY: {passed} passed, {failed} failed")
-    print(f"{'='*60}\n")
+    print(f"{'='*60}")
+    _print_category_summary(all_results)
 
 
 def print_test_config(config, scorer):
@@ -118,16 +119,13 @@ def run_benchmark(benchmark, config, results_dir, scorer):
         log_failure(results_dir, benchmark_id, error_msg)
         return {"passed": False}
     
-    # Check if test passed
     final_score = scores.get("final_score", 0)
     passed = final_score >= threshold
-    
-    # Print result
+    payload_stats = _payload_stats(chunks_info)
     print_result(benchmark_id, passed, final_score, threshold, scores, config["output_mode"], retrieved_answer)
-    
-    # Save detailed result
     result_data = {
         "test_id": benchmark_id,
+        "category": benchmark.get("category"),
         "question": question,
         "expected_answer": expected_answer,
         "retrieved_answer": retrieved_answer,
@@ -135,6 +133,10 @@ def run_benchmark(benchmark, config, results_dir, scorer):
         "threshold": threshold,
         "scores": scores,
         "passed": passed,
+        "approx_prompt_tokens": payload_stats["approx_prompt_tokens"],
+        "context_chars": payload_stats["context_chars"],
+        "n_unique_parents": payload_stats["n_unique_parents"],
+        "parent_dedup_ratio": payload_stats["parent_dedup_ratio"],
         "active_metrics": scores.get("active_metrics", []),
         "metric_weights": get_metric_weights(scorer, scores.get("active_metrics", [])),
         "chunks_info": chunks_info if chunks_info else [],
@@ -401,3 +403,41 @@ def format_failure_message(question, expected, retrieved, final_score, threshold
         lines.append(f"  keywords: {keywords_matched}/{total_keywords}")
     
     return "\n".join(lines)
+
+def _payload_stats(chunks_info):
+    if not chunks_info:
+        return {"approx_prompt_tokens": 0, "context_chars": 0, "n_unique_parents": 0, "parent_dedup_ratio": 0.0}
+    contents = []
+    for c in chunks_info:
+        v = c.get("content", "") if isinstance(c, dict) else ""
+        if isinstance(v, tuple):
+            v = v[0] if v else ""
+        elif isinstance(v, list):
+            v = " ".join(str(x) for x in v)
+        elif not isinstance(v, str):
+            v = str(v)
+        contents.append(v or "")
+    total_chars = sum(len(x) for x in contents)
+    approx_tokens = total_chars // 4
+    uniq = len({c.strip() for c in contents if c.strip()})
+    ratio = uniq / max(len(contents), 1)
+    return {"approx_prompt_tokens": approx_tokens, "context_chars": total_chars, "n_unique_parents": uniq, "parent_dedup_ratio": round(ratio, 3)}
+
+def _print_category_summary(results):
+    by_cat = defaultdict(list)
+    for r in results:
+        by_cat[(r.get("category") or "uncategorized")].append(r)
+    if not by_cat:
+        return
+    print(f"{'='*60}")
+    print(f"  PER-CATEGORY METRICS")
+    print(f"{'='*60}")
+    print(f"  {'category':<20}{'n':>4}  {'pass%':>6}  {'score':>6}  {'tok':>6}  {'dedup':>6}")
+    for cat, rows in sorted(by_cat.items()):
+        n = len(rows)
+        pass_rate = 100.0 * sum(1 for r in rows if r.get("passed")) / max(n, 1)
+        avg_score = sum(r.get("scores", {}).get("final_score", 0) for r in rows) / max(n, 1)
+        avg_tok = sum(r.get("approx_prompt_tokens", 0) for r in rows) / max(n, 1)
+        avg_dedup = sum(r.get("parent_dedup_ratio", 0) for r in rows) / max(n, 1)
+        print(f"  {cat:<20}{n:>4}  {pass_rate:>5.1f}%  {avg_score:>6.3f}  {avg_tok:>6.0f}  {avg_dedup:>6.2f}")
+    print(f"{'='*60}\n")

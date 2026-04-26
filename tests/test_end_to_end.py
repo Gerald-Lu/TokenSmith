@@ -162,3 +162,97 @@ def test_end_to_end_pipeline_stubbed():
         assert any("Parent Chunk 1: The full context of chunk 1." in c for c in passed_chunks)
         assert any("Machine learning uses statistics." in c for c in passed_chunks)
 
+
+@pytest.mark.unit
+@pytest.mark.filterwarnings("ignore:.*SwigPyPacked.*")
+@pytest.mark.filterwarnings("ignore:.*SwigPyObject.*")
+@pytest.mark.filterwarnings("ignore:.*swigvarlink.*")
+def test_hierarchical_retrieval_prefers_parent_context():
+    from src.main import get_answer
+    cfg = RAGConfig(
+        top_k=1,
+        num_candidates=5,
+        ensemble_method="linear",
+        ranker_weights={"faiss": 1.0, "bm25": 0.0},
+        chunk_mode="recursive_sections",
+        use_hyde=False,
+        disable_chunks=False,
+        rerank_mode="none",
+    )
+    args = argparse.Namespace(system_prompt_mode="baseline", index_prefix="t")
+    child0 = "CHILD_ONLY_MARKER alpha beta gamma delta"
+    parent0 = "PARENT_FULL_BLOCK alpha beta gamma delta epsilon zeta eta theta iota kappa"
+    chunks = [child0, "c1", "c2"]
+    artifacts = {
+        "chunks": chunks,
+        "sources": ["d", "d", "d"],
+        "retrievers": [MockRetriever("faiss", {0: 1.0, 1: 0.1, 2: 0.1}), MockRetriever("bm25", {0: 1.0, 1: 0.1, 2: 0.1})],
+        "ranker": EnsembleRanker(ensemble_method="linear", weights={"faiss": 0.5, "bm25": 0.5}),
+        "meta": [{"page_numbers": [1]} for _ in chunks],
+        "parent_map": {"0": parent0},
+    }
+    def _stub():
+        yield ""
+    with patch("src.main.answer", side_effect=lambda *a, **k: _stub()):
+        _ans, chunks_info, _hyde = get_answer(
+            question="q",
+            cfg=cfg,
+            args=args,
+            logger=RunLogger(),
+            console=MagicMock(),
+            artifacts=artifacts,
+            is_test_mode=True,
+        )
+    assert len(chunks_info) == 1
+    assert chunks_info[0]["chunk_id"] == 0
+    assert chunks_info[0]["content"] == parent0
+    assert chunks_info[0]["content"] != child0
+
+
+@pytest.mark.unit
+@pytest.mark.filterwarnings("ignore:.*SwigPyPacked.*")
+@pytest.mark.filterwarnings("ignore:.*SwigPyObject.*")
+@pytest.mark.filterwarnings("ignore:.*swigvarlink.*")
+def test_llm_payload_includes_parent_expansion():
+    from src.main import get_answer
+    captured = []
+    def _cap(prompt, model_path, max_tokens, temperature):
+        captured.append(prompt)
+        yield "done"
+    cfg = RAGConfig(
+        top_k=1,
+        num_candidates=5,
+        ensemble_method="linear",
+        ranker_weights={"faiss": 1.0, "bm25": 0.0},
+        chunk_mode="recursive_sections",
+        gen_model="models/nonexistent_placeholder.gguf",
+        use_hyde=False,
+        disable_chunks=False,
+        rerank_mode="none",
+    )
+    args = argparse.Namespace(system_prompt_mode="baseline", index_prefix="t")
+    child0 = "CHILD_MARKER narrow slice"
+    parent0 = "PARENT_EXPANDED narrow slice plus surrounding narrative body text"
+    chunks = [child0, "x", "y"]
+    artifacts = {
+        "chunks": chunks,
+        "sources": ["d", "d", "d"],
+        "retrievers": [MockRetriever("faiss", {0: 1.0}), MockRetriever("bm25", {0: 1.0})],
+        "ranker": EnsembleRanker(ensemble_method="linear", weights={"faiss": 0.5, "bm25": 0.5}),
+        "meta": [{"page_numbers": [1]} for _ in chunks],
+        "parent_map": {"0": parent0},
+    }
+    with patch("src.generator.stream_llama_cpp", side_effect=_cap):
+        get_answer(
+            question="what is X?",
+            cfg=cfg,
+            args=args,
+            logger=RunLogger(),
+            console=MagicMock(),
+            artifacts=artifacts,
+            is_test_mode=True,
+        )
+    assert captured, "expected prompt capture"
+    prompt = captured[-1]
+    assert parent0 in prompt
+    assert child0 not in prompt
