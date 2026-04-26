@@ -198,13 +198,14 @@ def build_index(
             all_chunks, 
             batch_size=1, 
             show_progress_bar=True,
-            convert_to_numpy=True 
+            convert_to_numpy=True,
+            normalize=True,
         )
 
     # Step 3: Build FAISS index
     print(f"Building FAISS index for {len(all_chunks):,} chunks...")
     dim = embeddings.shape[1]
-    index = faiss.IndexFlatL2(dim)
+    index = faiss.IndexFlatIP(dim)
     index.add(embeddings)
     faiss.write_index(index, str(artifacts_dir / f"{index_prefix}.faiss"))
     print(f"FAISS Index built successfully: {index_prefix}.faiss")
