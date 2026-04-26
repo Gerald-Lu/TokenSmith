@@ -109,29 +109,20 @@ class FAISSRetriever(Retriever):
         """
         Returns FAISS scores for top 'pool_size' keyed by global chunk index.
         """
-        # FAISS expects a 2D array
         q_vec = self.embedder.encode([query]).astype("float32")
-        
-        # Safety check on vector dimensions
-        if q_vec.shape[1] !=  self.index.d:
+
+        # Match the L2-normalization used at index time so IP == cosine similarity.
+        q_norm = np.linalg.norm(q_vec, axis=1, keepdims=True)
+        q_vec = q_vec / np.where(q_norm == 0, 1e-12, q_norm)
+
+        if q_vec.shape[1] != self.index.d:
             raise ValueError(
-                f"Embedding dim mismatch: index={ self.index.d} vs query={q_vec.shape[1]}"
+                f"Embedding dim mismatch: index={self.index.d} vs query={q_vec.shape[1]}"
             )
 
-        # Perform the search
-        distances, indices =  self.index.search(q_vec, pool_size)
-
-        # Remove invalid indices and ensure they are within bounds
-        cand_idxs = [i for i in indices[0] if 0 <= i < len(chunks)]
-
-        # Create the distance dictionary, ensuring we only include valid candidates
-        dists = {idx: float(dist) for idx, dist in zip(cand_idxs, distances[0][:len(cand_idxs)])}
-
-        # Invert distance to score: 1 / (1 + distance). Adding 1 avoids division by zero.
-        return {
-            idx: 1.0 / (1.0 + dist)
-            for idx, dist in dists.items()
-        }
+        sims, indices = self.index.search(q_vec, pool_size)
+        cand_idxs = [int(i) for i in indices[0] if 0 <= i < len(chunks)]
+        return {idx: float(s) for idx, s in zip(cand_idxs, sims[0][:len(cand_idxs)])}
 
 
 class BM25Retriever(Retriever):

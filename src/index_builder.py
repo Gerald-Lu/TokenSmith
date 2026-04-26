@@ -99,50 +99,39 @@ def build_index(
         page_pattern = re.compile(r'--- Page (\d+) ---')
 
         # Iterate through each chunk produced from this section
-        for sub_chunk_id, chunk_dict in enumerate(sub_chunks):
+        for chunk_dict in sub_chunks:
             sub_chunk = chunk_dict["child"]
             parent_chunk = chunk_dict["parent"]
 
-            # Track all pages this specific chunk touches
+            # Skip introduction chunks before any ID accounting so the
+            # parent_map / page_to_chunk_ids keys stay aligned with the
+            # row index in all_chunks (which is what FAISS uses).
+            if c["heading"] == "Introduction":
+                continue
+
+            chunk_id = len(all_chunks)
             chunk_pages = set()
 
-            # Split the sub_chunk by page markers to see if it
-            # spans multiple pages.
             fragments = page_pattern.split(sub_chunk)
 
-            # If there is content before the first page marker,
-            # it belongs to the current_page.
             if fragments[0].strip():
-                page_to_chunk_ids.setdefault(current_page, set()).add(total_chunks+sub_chunk_id)
+                page_to_chunk_ids.setdefault(current_page, set()).add(chunk_id)
                 chunk_pages.add(current_page)
 
-            # Process the new pages found within this sub_chunk. 
-            # Step by 2 where each pair represents (page number, text after it)
             for i in range(1, len(fragments), 2):
                 try:
-                    # Get the new page number from the marker
                     new_page = int(fragments[i]) + 1
-
-                    # If there is text after this marker, it belongs to the new_page.
                     if fragments[i+1].strip():
-                        page_to_chunk_ids.setdefault(new_page, set()).add(total_chunks + sub_chunk_id)
+                        page_to_chunk_ids.setdefault(new_page, set()).add(chunk_id)
                         chunk_pages.add(new_page)
-                    
                     current_page = new_page
-
                 except (IndexError, ValueError):
                     continue
 
-            # Clean sub_chunk and parent_chunk by removing page markers
             clean_chunk = re.sub(page_pattern, '', sub_chunk).strip()
             clean_parent = re.sub(page_pattern, '', parent_chunk).strip()
-            parent_map[total_chunks + sub_chunk_id] = clean_parent
-            
-            # Skip introduction chunks for embedding
-            if c["heading"] == "Introduction":
-                continue
-            
-            # Prepare metadata
+            parent_map[chunk_id] = clean_parent
+
             meta = {
                 "filename": markdown_file,
                 "mode": chunk_config.to_string(),
@@ -152,10 +141,9 @@ def build_index(
                 "section_path": full_section_path,
                 "text_preview": clean_chunk[:100],
                 "page_numbers": sorted(list(chunk_pages)),
-                "chunk_id": total_chunks + sub_chunk_id
+                "chunk_id": chunk_id
             }
 
-            # Prepare chunk with prefix
             if use_headings:
                 chunk_prefix = (
                     f"Description: {full_section_path} "
@@ -168,7 +156,10 @@ def build_index(
             sources.append(markdown_file)
             metadata.append(meta)
 
-        total_chunks += len(sub_chunks)
+        total_chunks = len(all_chunks)
+
+    assert len(all_chunks) == len(parent_map) == len(metadata), \
+        f"misaligned: chunks={len(all_chunks)} parent_map={len(parent_map)} meta={len(metadata)}"
 
     # Convert the sets to sorted lists for a clean, predictable output
     final_map = {}
@@ -204,18 +195,17 @@ def build_index(
             # Stop the pool to prevent hanging processes
             embedder.stop_multi_process_pool(pool)
     else:
-        # Standard single-process embedding
         embeddings = embedder.encode(
-            all_chunks, 
-            batch_size=1, 
+            all_chunks,
+            batch_size=1,
             show_progress_bar=True,
-            convert_to_numpy=True 
+            normalize=True,
         )
 
-    # Step 3: Build FAISS index
+    # IP on L2-normalized vectors == cosine similarity, in [-1, 1].
     print(f"Building FAISS index for {len(all_chunks):,} chunks...")
     dim = embeddings.shape[1]
-    index = faiss.IndexFlatL2(dim)
+    index = faiss.IndexFlatIP(dim)
     index.add(embeddings)
     faiss.write_index(index, str(artifacts_dir / f"{index_prefix}.faiss"))
     print(f"FAISS Index built successfully: {index_prefix}.faiss")
